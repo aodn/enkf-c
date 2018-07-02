@@ -137,6 +137,29 @@ bin/enkf_update
 
 ALL = $(PROGRAMS)
 
+TEST_DIRS = tests/prep/wa_jplmur/ \
+	tests/prep/wa_jplmur_psi/
+
+TEST_TARGETS := $(foreach dir,$(TEST_DIRS),$(dir)/observations.nc)
+
+
+$(TEST_TARGETS): bin/enkf_prep
+	@echo
+	@echo Testing $@
+	cd $(dir $@); ../../../bin/enkf_prep test.prm | tee log
+
+	
+tclean:
+	@echo 
+	@echo Cleaning up tests...
+	@for xfile in $(TEST_DIRS); do \
+		rm -f $$xfile/observations.nc; \
+		rm -f $$xfile/observations-orig.nc; \
+		rm -f $$xfile/log; \
+	done	
+
+check: $(TEST_TARGETS)
+
 default: $(PROGRAMS)
 
 all: $(ALL)
