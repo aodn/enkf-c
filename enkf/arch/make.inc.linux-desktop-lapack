@@ -16,7 +16,7 @@
 #   >ln -s /usr/lib64/blas/libblas.so.3.5.0 /usr/lib64/libblas.so
 # and add /usr/lib64/mpi/gcc/openmpi/bin to $PATH.
 
-LD_PATH =
+LD_PATH = -Wl,-rpath,/home/holiveira/apps/gridutils-c/lib
 
 LIB_NC = -lnetcdf -lhdf5 -lhdf5_hl
 LIB_LAPACK = -llapack -lblas -lgfortran
@@ -26,8 +26,8 @@ LIB_M = -lm
 #
 # (assume it is installed in $/usr/local)
 #
-INC_GU = -I/usr/local/include
-LIB_GU = /usr/local/lib64/libgu.so
+INC_GU = -I/home/holiveira/apps/gridutils-c/include
+LIB_GU = -L/home/holiveira/apps/gridutils-c/lib -lgu
 #
 # without gridutils (uncomment below):
 #
@@ -37,7 +37,7 @@ LIB_GU = /usr/local/lib64/libgu.so
 # which compiler/flags to use without MPI
 # choose gcc if you do not have clang
 #
-CC = clang
+CC = gcc
 CFLAGS = -g -pedantic -Wall -std=c99 -D_GNU_SOURCE -O2
 
 # which compiler/flags to use with MPI
