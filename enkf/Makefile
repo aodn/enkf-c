@@ -137,7 +137,7 @@ bin/enkf_update
 
 ALL = $(PROGRAMS)
 
-TEST_DIRS = tests/prep/wa_jplmur/ \
+TEST_DIRS = tests/prep/wa_jplmur_rho/ \
 	tests/prep/wa_jplmur_psi/
 
 TEST_TARGETS := $(foreach dir,$(TEST_DIRS),$(dir)/observations.nc)

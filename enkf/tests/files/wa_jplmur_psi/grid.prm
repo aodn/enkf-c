@@ -1,0 +1,13 @@
+NAME = grid-t
+VTYPE = sigma
+DATA = ../../files/grids/cwa_grid_adjusted.nc
+VDIR = tosurf
+MASKVARNAME = mask_psi
+XVARNAME = lon_psi
+YVARNAME = lat_psi
+DEPTHVARNAME = h_psi
+CVARNAME = Cs_r
+CCVARNAME = Cs_w
+HCVARNAME = hc
+SVARNAME = s_rho
+SCVARNAME = s_w
