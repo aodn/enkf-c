@@ -1,3 +1,19 @@
+v. 1.83.4
+   PS 06072018
+   -- Added QCFLAGNAME and QCFLAGVALS to reader_xy_scattered(),
+      reader_xy_gridded(), reader_xyz_gridded(), reader_xyh_gridded().
+v. 1.83.3
+   PS 05072018
+   -- Eliminated enquiry about dimension "nobs" in reader_xy_scattered().
+v. 1.83.2
+   PS 05072018
+   -- Eliminated enquiry about dimension "nobs" in reader_xyz_scattered() (for
+      now).
+   -- Modified obsprm_read() to enable reading multiple parameter values.
+v. 1.83.1
+   PS 05072018
+   -- Added QCFLAGNAME and QCFLAGVALS to reader_xyz_scattered() (for now).
+   -- Added prmfname to struct obsmeta for better error messaging in readers.
 v. 1.83.0
    PS 29062018
    -- Modified superob grid so that the centres of superob cells now coincide
