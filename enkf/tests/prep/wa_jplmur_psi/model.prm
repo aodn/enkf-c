@@ -1,0 +1,3 @@
+NAME = test-jpl
+VAR = temp
+GRID = grid-t
