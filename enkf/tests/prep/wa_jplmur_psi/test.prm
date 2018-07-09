@@ -1,9 +1,9 @@
 MODE = EnOI
 
-OBS = ../../files/wa_jplmur_psi/obs.prm
-MODEL = ../../files/wa_jplmur_psi/model.prm
-GRID = ../../files/wa_jplmur_psi/grid.prm
-OBSTYPES = ../../files/wa_jplmur_psi/obstypes.prm
+OBS = ../../files/cases/wa_jplmur_psi/obs.prm
+MODEL = ../../files/cases/wa_jplmur_psi/model.prm
+GRID = ../../files/cases/wa_jplmur_psi/grid.prm
+OBSTYPES = ../../files/cases/wa_jplmur_psi/obstypes.prm
 
 DATE =  15.0 days since 2005 01 01
 #WINDOWMIN = -30

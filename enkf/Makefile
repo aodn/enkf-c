@@ -137,28 +137,27 @@ bin/enkf_update
 
 ALL = $(PROGRAMS)
 
-TEST_DIRS = tests/prep/wa_jplmur_rho/ \
-	tests/prep/wa_jplmur_psi/
+TEST_CASES = wa_jplmur_rho\
+	     wa_jplmur_psi\
+	     wa_cars
 
-TEST_TARGETS := $(foreach dir,$(TEST_DIRS),$(dir)/observations.nc)
+TEST_PREP_TARGETS := $(foreach dir,$(TEST_CASES),tests/prep/$(dir)/observations.nc)
 
-
-$(TEST_TARGETS): bin/enkf_prep
-	@echo
+$(TEST_PREP_TARGETS): bin/enkf_prep
 	@echo Testing $@
+	echo $@
 	cd $(dir $@); ../../../bin/enkf_prep test.prm | tee log
-
 	
 tclean:
 	@echo 
 	@echo Cleaning up tests...
-	@for xfile in $(TEST_DIRS); do \
+	@for xfile in $(dir $(TEST_PREP_TARGETS)); do \
 		rm -f $$xfile/observations.nc; \
 		rm -f $$xfile/observations-orig.nc; \
 		rm -f $$xfile/log; \
 	done	
 
-check: $(TEST_TARGETS)
+check: $(TEST_PREP_TARGETS)
 
 default: $(PROGRAMS)
 
