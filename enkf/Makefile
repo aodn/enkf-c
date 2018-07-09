@@ -139,7 +139,9 @@ ALL = $(PROGRAMS)
 
 TEST_CASES = wa_jplmur_rho\
 	     wa_jplmur_psi\
-	     wa_cars
+	     wa_cars\
+	     wa_cars_fakez\
+	     eac_cars_fakez
 
 TEST_PREP_TARGETS := $(foreach dir,$(TEST_CASES),tests/prep/$(dir)/observations.nc)
 

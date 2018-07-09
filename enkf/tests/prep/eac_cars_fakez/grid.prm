@@ -1,0 +1,8 @@
+NAME = t-grid
+VTYPE = z
+DATA = ../../../examples/1/conf/grid_spec.nc
+XVARNAME = lon
+YVARNAME = lat
+ZVARNAME = zt
+DEPTHVARNAME = depth_t
+NUMLEVELSVARNAME = num_levels
