@@ -1,6 +1,0 @@
-NAME = TEM
-VAR = temp
-ISSURFACE = 1
-HFUNCTION = standard
-MINVALUE = -2.0
-MAXVALUE = 42.0
