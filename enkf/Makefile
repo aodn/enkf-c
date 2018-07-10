@@ -77,6 +77,7 @@ prep/reader_xy_gridded.c\
 prep/reader_xyz_scattered.c\
 prep/reader_xyz_gridded.c\
 prep/reader_xyh_gridded.c\
+prep/reader_jplmur.c\
 prep/enkf_prep.c
 
 HDR_PREP =\
@@ -135,6 +136,30 @@ bin/enkf_calc\
 bin/enkf_update
 
 ALL = $(PROGRAMS)
+
+TEST_CASES = wa_jplmur_rho\
+	     wa_jplmur_psi\
+	     wa_cars\
+	     wa_cars_fakez\
+	     eac_cars_fakez
+
+TEST_PREP_TARGETS := $(foreach dir,$(TEST_CASES),tests/prep/$(dir)/observations.nc)
+
+$(TEST_PREP_TARGETS): bin/enkf_prep
+	@echo Testing $@
+	echo $@
+	cd $(dir $@); ../../../bin/enkf_prep test.prm | tee log
+	
+tclean:
+	@echo 
+	@echo Cleaning up tests...
+	@for xfile in $(dir $(TEST_PREP_TARGETS)); do \
+		rm -f $$xfile/observations.nc; \
+		rm -f $$xfile/observations-orig.nc; \
+		rm -f $$xfile/log; \
+	done	
+
+check: $(TEST_PREP_TARGETS)
 
 default: $(PROGRAMS)
 

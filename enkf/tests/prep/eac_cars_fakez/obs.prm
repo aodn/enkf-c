@@ -1,0 +1,5 @@
+product == CARS
+type = TEM
+reader = standard
+file=../../files/obs/cars_data_jan_2005_ex1/y2005/m01/cars_temp_*.nc
+error_std = 0.5
