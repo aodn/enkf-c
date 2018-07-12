@@ -339,8 +339,9 @@ void reader_xy_gridded(char* fname, int fid, obsmeta* meta, grid* g, observation
 
         if ((npoints != NULL && npoints[i] == 0) || var[i] == var_fill_value || isnan(var[i]) || (std != NULL && (std[i] == std_fill_value || isnan(std[i]))) || (estd != NULL && (estd[i] == estd_fill_value || isnan(estd[i]))) || (have_time && !singletime && (time[i] == time_fill_value || isnan(time[i]))))
             continue;
-        if (qcflag != NULL && !(qcflag[i] | qcflagvals))
+        if (qcflag != NULL && (qcflagvals != (qcflagvals | 1<<qcflag[i])))
             continue;
+
 
         nobs_read++;
         obs_checkalloc(obs);
@@ -358,11 +359,12 @@ void reader_xy_gridded(char* fname, int fid, obsmeta* meta, grid* g, observation
             o->value = (double) (var[i] * var_scale_factor + var_add_offset + varshift);
         else
             o->value = (double) (var[i] + varshift);
-        if (estd == NULL && std == NULL)
+        if (estd == NULL && std == NULL){
             if (!isnan(var_estd))
                 o->std = var_estd;
             else
-                o->std = 0.0;
+                enkf_quit("Aborted. error_std is missing for for product %s in obs.prm.",meta->product);
+        }
         else {
             if (std == NULL)
                 o->std = 0.0;
