@@ -250,11 +250,12 @@ void reader_jplmur_gridded(char* fname, int fid, obsmeta* meta, grid* g, observa
         }
     }
 
-    if (std == NULL && estd == NULL)
+    if (std == NULL && estd == NULL) {
         if (ncw_att_exists(ncid, varid_var, "error_std")) {
             ncw_check_attlen(ncid, varid_var, "error_std", 1);
             ncw_get_att_double(ncid, varid_var, "error_std", &var_estd);
         }
+    }
 
     if (timename != NULL)
         ncw_inq_varid(ncid, timename, &varid_time);
@@ -325,23 +326,19 @@ void reader_jplmur_gridded(char* fname, int fid, obsmeta* meta, grid* g, observa
             o->value = (double) (var[i] * var_scale_factor + var_add_offset + varshift);
         else
             o->value = (double) (var[i] + varshift);
-        if (estd == NULL)
+        if (!isnan(var_estd)) {
             o->std = var_estd;
+        }
         else {
-            if (std == NULL)
-                o->std = 0.0;
-            else {
-                if (!isnan(std_add_offset))
-                    o->std = (double) (std[i] * std_scale_factor + std_add_offset);
-                else
-                    o->std = (double) std[i];
-            }
+            if (!isnan(std_add_offset))
+                o->std = (double) (std[i] * std_scale_factor + std_add_offset);
+            else
+                o->std = (double) std[i];
+             
             if (!isnan(estd_add_offset)) {
                 double std2 = (double) (estd[i] * estd_scale_factor + estd_add_offset);
-
                 o->std = (o->std > std2) ? o->std : std2;
-            } else
-                o->std = (o->std > estd[i]) ? o->std : estd[i];
+            } 
         }
         if (iscurv == 0) {
             o->lon = lon[i % ni];
@@ -373,16 +370,4 @@ void reader_jplmur_gridded(char* fname, int fid, obsmeta* meta, grid* g, observa
         obs->nobs++;
     }
     enkf_printf("        nobs = %d\n", nobs_read);
-
-    free(lon);
-    free(lat);
-    free(var);
-    if (std != NULL)
-        free(std);
-    if (estd != NULL)
-        free(estd);
-    if (npoints != NULL)
-        free(npoints);
-    if (time != NULL)
-        free(time);
 }

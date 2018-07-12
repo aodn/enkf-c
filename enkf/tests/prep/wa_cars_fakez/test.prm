@@ -1,9 +1,9 @@
 MODE = EnOI
 
-OBS = ../../files/cases/wa_cars_fakez/obs.prm
-MODEL = ../../files/cases/wa_cars_fakez/model.prm
-GRID = ../../files/cases/wa_cars_fakez/grid.prm
-OBSTYPES = ../../files/cases/wa_cars_fakez/obstypes.prm
+OBS = ../../prep/wa_cars_fakez/obs.prm
+MODEL = ../../prep/wa_cars_fakez/model.prm
+GRID = ../../prep/wa_cars_fakez/grid.prm
+OBSTYPES = ../../prep/wa_cars_fakez/obstypes.prm
 
 DATE =  15.0 days since 2005 01 01
 #WINDOWMIN = -30
