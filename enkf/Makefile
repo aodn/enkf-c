@@ -78,6 +78,7 @@ prep/reader_xyz_scattered.c\
 prep/reader_xyz_gridded.c\
 prep/reader_xyh_gridded.c\
 prep/reader_jplmur.c\
+prep/reader_imos_hfradar_ugeo_gridded.c\
 prep/enkf_prep.c
 
 HDR_PREP =\
@@ -141,15 +142,21 @@ TEST_CASES = wa_jplmur_rho\
 	     wa_jplmur_psi\
 	     wa_cars\
 	     wa_cars_fakez\
-	     eac_cars_fakez
+	     eac_cars_fakez\
+	     wa_hfradar
+
 
 TEST_PREP_TARGETS := $(foreach dir,$(TEST_CASES),tests/prep/$(dir)/observations.nc)
 
 $(TEST_PREP_TARGETS): bin/enkf_prep
 	@echo Testing $@
-	echo $@
-	cd $(dir $@); ../../../bin/enkf_prep test.prm | tee log
-	
+	@echo $@
+	@cd $(dir $@); ../../../bin/enkf_prep test.prm | tee log
+
+wa_hfradar: bin/enkf_prep
+	@echo Testing $@
+	cd tests/prep/$@; ../../../bin/enkf_prep test.prm
+
 tclean:
 	@echo 
 	@echo Cleaning up tests...
