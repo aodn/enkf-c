@@ -358,8 +358,11 @@ void reader_xy_gridded(char* fname, int fid, obsmeta* meta, grid* g, observation
             o->value = (double) (var[i] * var_scale_factor + var_add_offset + varshift);
         else
             o->value = (double) (var[i] + varshift);
-        if (estd == NULL)
-            o->std = var_estd;
+        if (estd == NULL && std == NULL)
+            if (!isnan(var_estd))
+                o->std = var_estd;
+            else
+                o->std = 0.0;
         else {
             if (std == NULL)
                 o->std = 0.0;
@@ -369,12 +372,13 @@ void reader_xy_gridded(char* fname, int fid, obsmeta* meta, grid* g, observation
                 else
                     o->std = (double) std[i];
             }
-            if (!isnan(estd_add_offset)) {
-                double std2 = (double) (estd[i] * estd_scale_factor + estd_add_offset);
-
-                o->std = (o->std > std2) ? o->std : std2;
-            } else
-                o->std = (o->std > estd[i]) ? o->std : estd[i];
+            if (estd != NULL) {
+                if (!isnan(estd_add_offset)) {
+                    double std2 = (double) (estd[i] * estd_scale_factor + estd_add_offset);
+                    o->std = (o->std > std2) ? o->std : std2;
+                } else
+                    o->std = (o->std > estd[i]) ? o->std : estd[i];
+            }
         }
         if (iscurv == 0) {
             o->lon = lon[i % ni];
