@@ -78,7 +78,7 @@ prep/reader_xyz_scattered.c\
 prep/reader_xyz_gridded.c\
 prep/reader_xyh_gridded.c\
 prep/reader_jplmur.c\
-prep/reader_imos_hfradar_ugeo_gridded.c\
+prep/reader_xy_gridded_hfradar.c\
 prep/enkf_prep.c
 
 HDR_PREP =\
@@ -143,7 +143,8 @@ TEST_CASES = wa_jplmur_rho\
 	     wa_cars\
 	     wa_cars_fakez\
 	     eac_cars_fakez\
-	     wa_hfradar
+	     wa_hfradar\
+	     wa_hfradar_rotate
 
 
 TEST_PREP_TARGETS := $(foreach dir,$(TEST_CASES),tests/prep/$(dir)/observations.nc)
