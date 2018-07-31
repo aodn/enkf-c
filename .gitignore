@@ -1,3 +1,8 @@
 bin/
 *.nc
 log
+.mypy_cache*
+.pycache*
+*.py
+*.png
+.pytest_cache*
