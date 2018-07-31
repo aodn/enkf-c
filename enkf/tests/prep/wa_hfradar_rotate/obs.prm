@@ -1,0 +1,21 @@
+product == HFRADAR
+type = U
+reader = imos
+file=../../files/obs/IMOS_ACORN_V_20160101T003000Z_ROT_FV00_1-hour-avg.nc
+parameter ROTATION = 1
+parameter VARNAME = UCUR
+parameter STDNAME = UCUR_sd
+parameter U_QCFLAGNAME = UCUR_quality_control
+parameter V_QCFLAGNAME = VCUR_quality_control
+parameter QCFLAGVALS = 0, 1, 2, 3
+
+product == HFRADAR
+type = V
+reader = imos
+file=../../files/obs/IMOS_ACORN_V_20160101T003000Z_ROT_FV00_1-hour-avg.nc
+parameter ROTATION = 1
+parameter VARNAME = VCUR
+parameter STDNAME = VCUR_sd
+parameter U_QCFLAGNAME = UCUR_quality_control
+parameter V_QCFLAGNAME = VCUR_quality_control
+parameter QCFLAGVALS = 0, 1, 2, 3

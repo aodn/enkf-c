@@ -1,0 +1,5 @@
+NAME = test-hfradar
+VAR = u
+GRID = grid-t
+VAR = v
+GRID = grid-t
