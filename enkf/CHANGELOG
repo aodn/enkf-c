@@ -1,3 +1,31 @@
+v. 1.83.12
+   PS 30072018
+   -- Another correction to obs_read().
+v. 1.83.11
+   PS 30072018
+   -- Corrected obs_read() to take care of the recently added attribute
+      "long_name" for some variables.
+   -- Corrected (I hope) the report of the report on subgrid variability in
+      PREP.
+v. 1.83.10
+   PS 27072018
+   -- Added "long_name" attribute to variables in observations.nc and
+      observations-orig.nc.
+v. 1.83.9
+   PS 23072018
+   -- Modified readfield(), writefield(), read3dfield(), writerow() for
+      (hopefully) more robust handling of the fill value and valid range. Not
+      expected to have any effect in majority of existing applications.
+v. 1.83.8
+   PS 20072018
+   -- In reader_mmt_standard() -- allow to proceed if no flags TEMP_BLUELINK_QC
+      or PSAL_BLUELINK_QC are found.
+v. 1.83.7
+   PS 16072018
+   -- A minor modification in writefield().
+v. 1.83.6
+   PS 16072018
+   -- A minor modification in readfield().
 v. 1.83.5
    PS 10072018
    -- A minor but potentially important fix in das_writevcorrs() (it ensures
