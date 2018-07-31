@@ -82,6 +82,7 @@
 #include "prep_utils.h"
 #include "allreaders.h"
 
+
 #define TYPE_DOUBLE 0
 #define TYPE_SHORT 1
 
@@ -90,11 +91,12 @@
  */
 void reader_xy_gridded_hfradar(char* fname, int fid, obsmeta* meta, grid* g, observations* obs)
 {
+
     int ksurf = grid_getsurflayerid(g);
     int isperiodic_i = grid_isperiodic_i(g);
     int** numlevels = grid_getnumlevels(g);
     float** grid_angle = grid_getangle(g);
-    int grid_ni = 0, grid_nj = 0; 
+    int grid_ni = 0, grid_nj = 0;
 
     char* varname = NULL;
     char* u_varname = NULL;
@@ -644,7 +646,7 @@ void reader_xy_gridded_hfradar(char* fname, int fid, obsmeta* meta, grid* g, obs
             else
                 meridional = v_var[i];
                         
-            oangle = interpolate2d(o->fi, o-> fj, grid_ni, grid_nj, grid_angle, numlevels, isperiodic_i ) * DEG2RAD;
+            oangle = interpolate2d(o->fi, o-> fj, grid_ni, grid_nj, grid_angle, numlevels, isperiodic_i);
 
             if (strcmp(varname,u_varname) == 0)
                 o->value = zonal*cos(oangle) - meridional*sin(oangle);
@@ -662,8 +664,6 @@ void reader_xy_gridded_hfradar(char* fname, int fid, obsmeta* meta, grid* g, obs
         if (estd == NULL && std == NULL){
             if (!isnan(var_estd))
                 o->std = var_estd;
-            else
-                enkf_quit("Aborted. error_std is missing for for product %s in obs.prm.",meta->product);
         }
         else {
             if (std == NULL)
