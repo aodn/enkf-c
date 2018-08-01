@@ -214,8 +214,11 @@ void reader_xy_gridded_hfradar(char* fname, int fid, obsmeta* meta, grid* g, obs
         else if (strcasecmp(meta->pars[i].name, "V_QCFLAGNAME") == 0)
             v_qcflagname = meta->pars[i].value;
         else if (strcasecmp(meta->pars[i].name, "QCFLAGVALS") == 0) {
+            char* pline = meta->pars[i].value;
+            int linelen = sizeof(pline);
+            char lineval[linelen];
+            char* line = strcpy(lineval,pline);
             char seps[] = " ,";
-            char* line = meta->pars[i].value;
             char* token;
             int val;
 
@@ -227,6 +230,7 @@ void reader_xy_gridded_hfradar(char* fname, int fid, obsmeta* meta, grid* g, obs
                     enkf_quit("%s: QCFLAGVALS entry = %d (supposed to be in [0,31] interval", meta->prmfname, val);
                 qcflagvals |= 1 << val;
                 line = NULL;
+                enkf_printf("here-QCFLAGVALS set to: %d\n",qcflagvals);
             }
             if (qcflagvals == 0)
                 enkf_quit("%s: no valid flag entries found after QCFLAGVALS\n", meta->prmfname);
@@ -582,25 +586,24 @@ void reader_xy_gridded_hfradar(char* fname, int fid, obsmeta* meta, grid* g, obs
           invalid_u_var = (u_var != NULL && (u_var[i] == u_var_fill_value || isnan(u_var[i])));
           invalid_v_var = (v_var != NULL && (v_var[i] == v_var_fill_value || isnan(v_var[i])));
           invalid_time = (have_time && !singletime && (time[i] == time_fill_value || isnan(time[i])));
- 
+
         if (invalid_gdop || invalid_npoints1 || invalid_npoints2 || invalid_var || invalid_std || invalid_estd || invalid_u_var || invalid_v_var || invalid_time)
              continue;
 
-        if (qcflag != NULL)
+        if (qcflag != NULL) {
             /* general qcflags has precedence in discarding obs*/
             if ( (qcflagvals != (qcflagvals | 1<<qcflag[i])) || (u_qcflag != NULL && (qcflagvals != (qcflagvals | 1<<u_qcflag[i]))) || (v_qcflag != NULL && (qcflagvals != (qcflagvals | 1<<v_qcflag[i]))) )
                 continue;
+        }
 
         /* [u,v]_qcflags has precedence in values. */
         if (u_qcflagname != NULL && v_qcflagname != NULL) {
             if ( (u_qcflag != NULL && (qcflagvals != (qcflagvals | 1<<u_qcflag[i]))) || (v_qcflag != NULL && (qcflagvals != (qcflagvals | 1<<v_qcflag[i]))) )
                  continue;
-        }
-        else if (u_qcflagname != NULL) {
+        } else if (u_qcflagname != NULL) {
             if (u_qcflag != NULL && (qcflagvals != (qcflagvals | 1<<u_qcflag[i])))
                 continue;
-        }
-        else if (v_qcflagname != NULL) {
+        } else if (v_qcflagname != NULL) {
             if (v_qcflag != NULL && (qcflagvals != (qcflagvals | 1<<v_qcflag[i])))
                 continue;
         }
