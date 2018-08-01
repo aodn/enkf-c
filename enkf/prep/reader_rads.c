@@ -46,6 +46,7 @@ void reader_rads_standard(char* fname, int fid, obsmeta* meta, grid* g, observat
     int ksurf = grid_getsurflayerid(g);
     double mindepth = MINDEPTH_DEF;
     char* addname = NULL;
+    char* flags = NULL;
     int ncid;
     int dimid_nobs;
     size_t nobs_local;
@@ -71,6 +72,9 @@ void reader_rads_standard(char* fname, int fid, obsmeta* meta, grid* g, observat
         } else if (strcasecmp(meta->pars[i].name, "ADD") == 0) {
             addname = meta->pars[i].value;
             enkf_printf("        ADDING \"%s\"\n", addname);
+        } else if (strcasecmp(meta->pars[i].name, "flags") == 0) {
+            flags = meta->pars[i].value;
+            enkf_printf("        Using flag variable \"%s\"\n", flags);
         } else
             enkf_quit("unknown PARAMETER \"%s\"\n", meta->pars[i].name);
     }
@@ -183,6 +187,7 @@ void reader_rads_standard2(char* fname, int fid, obsmeta* meta, grid* g, observa
     int ksurf = grid_getsurflayerid(g);
     double mindepth = MINDEPTH_DEF;
     char* addname = NULL;
+    char* flags = "local_flag";
     int ncid;
     int dimid_nobs;
     size_t nobs_local;
@@ -209,6 +214,9 @@ void reader_rads_standard2(char* fname, int fid, obsmeta* meta, grid* g, observa
         } else if (strcasecmp(meta->pars[i].name, "ADD") == 0) {
             addname = meta->pars[i].value;
             enkf_printf("        ADDING \"%s\"\n", addname);
+        } else if (strcasecmp(meta->pars[i].name, "flags") == 0) {
+            flags = meta->pars[i].value;
+            enkf_printf("        Using flag variable \"%s\"\n", flags);
         } else
             enkf_quit("unknown PARAMETER \"%s\"\n", meta->pars[i].name);
     }
@@ -248,7 +256,7 @@ void reader_rads_standard2(char* fname, int fid, obsmeta* meta, grid* g, observa
         ncw_get_var_double(ncid, varid_add, add);
     }
 
-    ncw_inq_varid(ncid, "local_flag", &varid_flag);
+    ncw_inq_varid(ncid, flags, &varid_flag);
     flag = malloc(nobs_local * sizeof(int));
     ncw_get_var_int(ncid, varid_flag, flag);
 
