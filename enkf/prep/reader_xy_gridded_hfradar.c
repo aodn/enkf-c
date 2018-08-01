@@ -230,7 +230,6 @@ void reader_xy_gridded_hfradar(char* fname, int fid, obsmeta* meta, grid* g, obs
                     enkf_quit("%s: QCFLAGVALS entry = %d (supposed to be in [0,31] interval", meta->prmfname, val);
                 qcflagvals |= 1 << val;
                 line = NULL;
-                enkf_printf("here-QCFLAGVALS set to: %d\n",qcflagvals);
             }
             if (qcflagvals == 0)
                 enkf_quit("%s: no valid flag entries found after QCFLAGVALS\n", meta->prmfname);
