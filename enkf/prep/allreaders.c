@@ -50,7 +50,7 @@ obsreader_entry allreaders[] = {
     {"ALL", "xyz_scattered", reader_xyz_scattered},
     {"ALL", "xyz_gridded", reader_xyz_gridded},
     {"ALL", "xyh_gridded", reader_xyh_gridded},
-    {"JPLMUR", "standard", reader_jplmur_gridded}
+    {"HFRADAR", "imos", reader_xy_gridded_hfradar}
 };
 
 /**

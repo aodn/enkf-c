@@ -1,0 +1,21 @@
+product == ALL
+type = U
+reader = xy_gridded
+file=../../files/obs/IMOS_ACORN_V_20160101T003000Z_ROT_FV00_1-hour-avg.nc
+parameter varname = UCUR
+parameter lonname = LONGITUDE
+parameter latname = LATITUDE
+parameter stdname = UCUR_sd
+parameter qcflagname = UCUR_quality_control
+parameter qcflagvals = 0, 1, 2, 3
+
+product == ALL
+type = V
+reader = xy_gridded
+file=../../files/obs/IMOS_ACORN_V_20160101T003000Z_ROT_FV00_1-hour-avg.nc
+parameter varname = VCUR
+parameter lonname = LONGITUDE
+parameter latname = LATITUDE
+parameter stdname = VCUR_sd
+parameter qcflagname = VCUR_quality_control
+parameter qcflagvals = 0, 1, 2, 3

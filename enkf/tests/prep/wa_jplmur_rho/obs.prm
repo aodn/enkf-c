@@ -2,4 +2,4 @@ product == JPLMUR
 type = TEM
 reader = standard
 file=../../files/obs/20050101090000-JPL-L4_GHRSST-SSTfnd-MUR-GLOB-v02.0-fv04.1.nc
-error_std = 0.5
+#error_std = 1

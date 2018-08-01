@@ -1,9 +1,9 @@
 MODE = EnOI
 
-OBS = ../../prep/wa_jplmur_rho/obs.prm
-MODEL = ../../prep/wa_jplmur_rho/model.prm
-GRID = ../../prep/wa_jplmur_rho/grid.prm
-OBSTYPES = ../../prep/wa_jplmur_rho/obstypes.prm
+OBS = ../../prep/wa_hfradar/obs.prm
+MODEL = ../../prep/wa_hfradar/model.prm
+GRID = ../../prep/wa_hfradar/grid.prm
+OBSTYPES = ../../prep/wa_hfradar/obstypes.prm
 
 DATE =  15.0 days since 2005 01 01
 #WINDOWMIN = -30
