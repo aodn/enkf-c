@@ -25,7 +25,7 @@
  *                  internal variability of the collated data
  *              - ESTDNAME ("error_std") (-)
  *                  error STD; if absent then needs to be specified externally
- *                  in the oobservation data parameter file
+ *                  in the observation data parameter file
  *              - VARSHIFT (-)
  *                  data offset to be added
  *              - MINDEPTH (-)
@@ -75,7 +75,8 @@ void reader_xy_gridded(char* fname, int fid, obsmeta* meta, grid* g, observation
     int ndim_var, ndim_xy;
     size_t dimlen_var[3], dimlen_xy[2];
 
-    uint32_t qcflagvals = 0;
+    size_t iflags = 0;
+    int32_t* list_qcflagvals = NULL;
     float varshift = 0.0;
     double mindepth = 0.0;
     char instrument[MAXSTRLEN];
@@ -126,19 +127,23 @@ void reader_xy_gridded(char* fname, int fid, obsmeta* meta, grid* g, observation
         else if (strcasecmp(meta->pars[i].name, "QCFLAGNAME") == 0)
             qcflagname = meta->pars[i].value;
         else if (strcasecmp(meta->pars[i].name, "QCFLAGVALS") == 0) {
+            char* pline = meta->pars[i].value;
+            int linelen = sizeof(pline);
+            char lineval[linelen];
+            char* line = strcpy(lineval,pline);
             char seps[] = " ,";
-            char* line = meta->pars[i].value;
             char* token;
             int val;
 
-            qcflagvals = 0;
             while ((token = strtok(line, seps)) != NULL) {
                 if (!str2int(token, &val))
                     enkf_quit("%s: could not convert QCFLAGVALS entry \"%s\" to integer", meta->prmfname, token);
-                qcflagvals |= 1 << val;
+                ++iflags;
+                list_qcflagvals = realloc(list_qcflagvals,(iflags)*sizeof(uint32_t));
+                list_qcflagvals[iflags-1] = val;
                 line = NULL;
             }
-            if (qcflagvals == 0)
+            if (iflags == 0)
                 enkf_quit("%s: no valid flag entries found after QCFLAGVALS\n", meta->prmfname);
         } else if (strcasecmp(meta->pars[i].name, "VARSHIFT") == 0) {
             if (!str2float(meta->pars[i].value, &varshift))
@@ -337,9 +342,18 @@ void reader_xy_gridded(char* fname, int fid, obsmeta* meta, grid* g, observation
 
         if ((npoints != NULL && npoints[i] == 0) || var[i] == var_fill_value || isnan(var[i]) || (std != NULL && (std[i] == std_fill_value || isnan(std[i]))) || (estd != NULL && (estd[i] == estd_fill_value || isnan(estd[i]))) || (have_time && !singletime && (time[i] == time_fill_value || isnan(time[i]))))
             continue;
-        if (qcflag != NULL && (qcflagvals != (qcflagvals | 1<<qcflag[i])))
-            continue;
-
+        if (qcflag != NULL) {
+            int j;
+            int valid = 0;
+            for (j = 0; j < (int) iflags; j++) {
+                if (qcflag[i] == list_qcflagvals[j]){
+                    valid = 1;
+                    continue;
+                }
+            }
+            if (valid == 0)
+                continue;
+        }
 
         nobs_read++;
         obs_checkalloc(obs);
