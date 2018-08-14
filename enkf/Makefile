@@ -144,19 +144,16 @@ TEST_CASES = wa_jplmur_rho\
 	     wa_cars_fakez\
 	     eac_cars_fakez\
 	     wa_hfradar\
-	     wa_hfradar_rotate
+	     wa_hfradar_rotate\
+	     wa_hfradar_opendap\
+	     ansr_low_2013
 
 
 TEST_PREP_TARGETS := $(foreach dir,$(TEST_CASES),tests/prep/$(dir)/observations.nc)
 
 $(TEST_PREP_TARGETS): bin/enkf_prep
-	@echo Testing $@
-	@echo $@
+	@echo Testing prep for $@
 	@cd $(dir $@); ../../../bin/enkf_prep test.prm | tee log
-
-wa_hfradar: bin/enkf_prep
-	@echo Testing $@
-	cd tests/prep/$@; ../../../bin/enkf_prep test.prm
 
 tclean:
 	@echo 
