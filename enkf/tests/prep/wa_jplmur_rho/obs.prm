@@ -1,5 +1,8 @@
 product == JPLMUR
 type = TEM
-reader = standard
+reader = xy_gridded
 file=../../files/obs/20050101090000-JPL-L4_GHRSST-SSTfnd-MUR-GLOB-v02.0-fv04.1.nc
-#error_std = 1
+parameter varname = analysed_sst
+parameter varshift = -273.15
+parameter stdname = analysis_error
+error_std = 0.5

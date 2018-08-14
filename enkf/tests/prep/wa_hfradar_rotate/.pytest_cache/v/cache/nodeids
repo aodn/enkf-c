@@ -1,3 +1,5 @@
 [
+  "test_plot.py::test_obs_loc",
+  "test_plot.py::test_sobs_loc",
   "test_plot.py::test_rotation"
 ]

@@ -1,3 +1,5 @@
 {
-  "test_plot.py::test_rotation": true
+  "test_plot.py::test_obs_loc": true,
+  "test_plot.py::test_rotation": true,
+  "test_plot.py::test_sobs_loc": true
 }
