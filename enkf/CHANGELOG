@@ -1,3 +1,20 @@
+v. 1.84.0
+   -- find_files(): merged pull request by Hugo Oliveira (to allow opendap
+      access).
+v. 1.83.15
+   PS 07082018
+   -- Fixed 2 defects in regard to qcflag in reader_xy_gridded(). Thanks to Hugo
+      Oliveira for drawing attention.
+v. 1.83.14
+   PS 03082018
+   -- A fix in enkf_calc() that prevents of processes other than rank = 0 write
+      the modified errors to observations.nc.
+   -- A cosmetic change in das_writeinflation().
+v. 1.83.13
+   PS 02082018
+   -- Fixed defects in regard to qcflag in reader_xy_gridded(). Thanks to Hugo
+      Oliveira for raising suspicion.
+   -- Updated ncw.[ch] to v2.20.0.
 v. 1.83.12
    PS 30072018
    -- Another correction to obs_read().
