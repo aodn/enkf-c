@@ -127,14 +127,15 @@ void reader_xy_gridded(char* fname, int fid, obsmeta* meta, grid* g, observation
         else if (strcasecmp(meta->pars[i].name, "QCFLAGNAME") == 0)
             qcflagname = meta->pars[i].value;
         else if (strcasecmp(meta->pars[i].name, "QCFLAGVALS") == 0) {
-            char* pline = meta->pars[i].value;
-            int linelen = sizeof(pline);
-            char lineval[linelen];
-            char* line = strcpy(lineval,pline);
             char seps[] = " ,";
+            char* line = meta->pars[i].value;
             char* token;
             int val;
 
+            assert(meta->pars[i].value != NULL);        /* (supposed to be
+                                                         * inpossible) */
+
+            line = strdup(meta->pars[i].value);
             while ((token = strtok(line, seps)) != NULL) {
                 if (!str2int(token, &val))
                     enkf_quit("%s: could not convert QCFLAGVALS entry \"%s\" to integer", meta->prmfname, token);
