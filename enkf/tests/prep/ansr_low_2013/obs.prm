@@ -1,173 +1,157 @@
-# product == abom-sst
-# type = sst
-# reader = xy_gridded
-#file=/dev/shm/test.nc
-#file=/dev/shm/19920324152000-ABOM-L3S_GHRSST-SSTskin-AVHRR_D-1d_night.nc
-# file=http://thredds.aodn.org.au/thredds/dodsC/IMOS/SRS/SST/ghrsst/L3S-1d/ngt/1992/19920324152000-ABOM-L3S_GHRSST-SSTskin-AVHRR_D-1d_night.nc
-#file=../../files/obs/ansr_2013/imos/abom-sst/20130201*.nc
-#file=../../files/obs/ansr_2013/imos/abom-sst/20130210*.nc
-# parameter timename = time
-# parameter varname = sea_surface_temperature
-# parameter lonname = lon
-# parameter latname = lat
-# parameter varshift = -273.15
-# error_std = 1.
-#parameter qcflagname = l2p_flags
-#parameter qcflagvals = 1
-#parameter stdname = sst_standard_deviation
+product == abom-sst
+type = sst
+reader = xy_gridded
+# file=http://thredds.aodn.org.au/thredds/dodsC/IMOS/SRS/SST/ghrsst/L3S-1d/ngt/2013/20130201152000-ABOM-L3S_GHRSST-SSTskin-AVHRR_D-1d_night.nc
+file=../../files/obs/ansr_2013/imos/abom-sst/20130201*.nc
+file=../../files/obs/ansr_2013/imos/abom-sst/20130210*.nc
+parameter timename = time
+parameter varname = sea_surface_temperature
+parameter lonname = lon
+parameter latname = lat
+parameter varshift = -273.15
+error_std = 1.
+parameter qcflagname = l2p_flags
+parameter qcflagvals = 1
+parameter stdname = sst_standard_deviation
 
 product == jpl-mur
 type = sst
 reader = xy_gridded
-#file=../../files/obs/ansr_2013/sst/jpl-mur/20130210*.nc
-file=https://podaac-opendap.jpl.nasa.gov:443/opendap/allData/ghrsst/data/GDS2/L4/GLOB/JPL/MUR/v4.1/2016/002/20160102090000-JPL-L4_GHRSST-SSTfnd-MUR-GLOB-v02.0-fv04.1.nc
+#file=https://podaac-opendap.jpl.nasa.gov:443/opendap/allData/ghrsst/data/GDS2/L4/GLOB/JPL/MUR/v4.1/2016/002/20160102090000-JPL-L4_GHRSST-SSTfnd-MUR-GLOB-v02.0-fv04.1.nc
+file=../../files/obs/ansr_2013/sst/jpl-mur/20130210*.nc
 parameter timename = time
 parameter varname = analysed_sst
 parameter lonname = lon
 parameter latname = lat
 parameter stdname = analysis_error
 
+product == NAVO
+type = sst
+reader = standard
+file=../../files/obs/ansr_2013/sst/navo/2013020*.nc
+file=../../files/obs/ansr_2013/sst/navo/20130210*.nc
 
-# product == jpl-mur
-# type = sst
-# reader = xy_gridded
-# file=../../files/obs/ansr_2013/sst/jpl-mur/20130210*.nc
-# parameter timename = time
-# parameter varname = analysed_sst
-# parameter lonname = lon
-# parameter latname = lat
-# parameter stdname = analysis_error
+product == WindSat
+type = sst
+reader = standard
+file=../../files/obs/ansr_2013/sst/windsat/2013020*.nc
+file=../../files/obs/ansr_2013/sst/windsat/20130210*.nc
 
-# product == NAVO
-# type = sst
-# reader = standard
-# file=../../files/obs/ansr_2013/sst/navo/2013020*.nc
-# file=../../files/obs/ansr_2013/sst/navo/20130210*.nc
+product == smos
+type = sss
+reader = xy_gridded
+file=../../files/obs/ansr_2013/smos/*2013.02.0*.nc
+file=../../files/obs/ansr_2013/smos/*2013.02.10*.nc
 
-# product == WindSat
-# type = sst
-# reader = standard
-# file=../../files/obs/ansr_2013/sst/windsat/2013020*.nc
-# file=../../files/obs/ansr_2013/sst/windsat/20130210*.nc
+parameter timename = time
+parameter varname = sss
+parameter lonname = longitude
+parameter latname = latitude
+error_std = 0.1
 
-# product == smos
-# type = sss
-# reader = xy_gridded
-# file=../../files/obs/ansr_2013/smos/*2013.02.0*.nc
-# file=../../files/obs/ansr_2013/smos/*2013.02.10*.nc
+product == aquarius
+type = sss
+reader = xy_gridded
+file=../../files/obs/ansr_2013/aquarius/Q2013020*.nc
+file=../../files/obs/ansr_2013/aquarius/Q20130210*.nc
+parameter timename = time
+parameter varname = SSS
+parameter lonname = longitude
+parameter latname = latitude
+error_std = 0.1
 
-# parameter timename = time
-# parameter varname = sss
-# parameter lonname = longitude
-# parameter latname = latitude
-# error_std = 0.1
+product == CARS
+type = TEM
+reader = standard
+file=../../files/obs/ansr_2013/cars/y2013/m02/cars_temp_d0*.nc
+file=../../files/obs/ansr_2013/cars/y2013/m02/cars_temp_d10.nc
+error_std = 0.5
 
-# product == aquarius
-# type = sss
-# reader = xy_gridded
-# file=../../files/obs/ansr_2013/aquarius/Q2013020*.nc
-# file=../../files/obs/ansr_2013/aquarius/Q20130210*.nc
-# parameter timename = time
-# parameter varname = SSS
-# parameter lonname = longitude
-# parameter latname = latitude
-# error_std = 0.1
+product == CARS
+type = SAL
+reader = standard
+file=../../files/obs/ansr_2013/cars/y2013/m02/cars_salt_d0*.nc
+file=../../files/obs/ansr_2013/cars/y2013/m02/cars_salt_d10.nc
+error_std = 0.1
 
-# product == CARS
-# type = TEM
-# reader = standard
-# file=../../files/obs/ansr_2013/cars/y2013/m02/cars_temp_d0*.nc
-# file=../../files/obs/ansr_2013/cars/y2013/m02/cars_temp_d10.nc
-# error_std = 0.5
+product == RADS
+type = SLA
+reader = standard
+file=../../files/obs/ansr_2013/rads-ib/*_2013020*.nc
+file=../../files/obs/ansr_2013/rads-ib/*_20130210*.nc
+parameter flags = local_flags
 
-# product == CARS
-# type = SAL
-# reader = standard
-# file=../../files/obs/ansr_2013/cars/y2013/m02/cars_salt_d0*.nc
-# file=../../files/obs/ansr_2013/cars/y2013/m02/cars_salt_d10.nc
-# error_std = 0.1
+product == HFRADAR
+type = u_surf
+reader = imos
+file=../../files/obs/ansr_2013/imos/hf-radar/*_2013020*.nc
+file=../../files/obs/ansr_2013/imos/hf-radar/*_20130210*.nc
+parameter rotation = 1
+parameter timename = TIME
+parameter lonname = LONGITUDE
+parameter latname = LATITUDE
+parameter varname = UCUR
+parameter stdname = UCUR_sd
+parameter u_qcflagname = UCUR_quality_control
+parameter v_qcflagname = VCUR_quality_control
+parameter qcflagvals = 0, 1, 2, 3
 
-# product == RADS
-# type = SLA
-# reader = standard
-# file=../../files/obs/ansr_2013/rads-ib/*_2013020*.nc
-# file=../../files/obs/ansr_2013/rads-ib/*_20130210*.nc
-# parameter flags = local_flags
+product == HFRADAR
+type = v_surf
+reader = imos
+file=../../files/obs/ansr_2013/imos/hf-radar/*_2013020*.nc
+file=../../files/obs/ansr_2013/imos/hf-radar/*_20130210*.nc
+parameter rotation = 1
+parameter timename = TIME
+parameter lonname = LONGITUDE
+parameter latname = LATITUDE
+parameter varname = VCUR
+parameter stdname = VCUR_sd
+parameter u_qcflagname = UCUR_quality_control
+parameter v_qcflagname = VCUR_quality_control
+parameter qcflagvals = 0, 1, 2, 3
 
-# product == HFRADAR
-# type = u_surf
-# reader = imos
-# file=../../files/obs/ansr_2013/imos/hf-radar/*_2013020*.nc
-# file=../../files/obs/ansr_2013/imos/hf-radar/*_20130210*.nc
-# parameter rotation = 1
-# parameter timename = TIME
-# parameter lonname = LONGITUDE
-# parameter latname = LATITUDE
-# parameter varname = UCUR
-# parameter stdname = UCUR_sd
-# parameter u_qcflagname = UCUR_quality_control
-# parameter v_qcflagname = VCUR_quality_control
-# parameter qcflagvals = 0, 1, 2, 3
+product == imos_ocean_currents
+type = SLA
+reader = xy_gridded
+file=../../files/obs/ansr_2013/imos/ocean_currents/*2013020*.nc
+file=../../files/obs/ansr_2013/imos/ocean_currents/*20130210*.nc
+parameter timename = TIME 
+parameter lonname = LONGITUDE
+parameter latname = LATITUDE
+parameter varname = GSLA
+error_std = 0.1
 
-# product == HFRADAR
-# type = v_surf
-# reader = imos
-# file=../../files/obs/ansr_2013/imos/hf-radar/*_2013020*.nc
-# file=../../files/obs/ansr_2013/imos/hf-radar/*_20130210*.nc
-# parameter rotation = 1
-# parameter timename = TIME
-# parameter lonname = LONGITUDE
-# parameter latname = LATITUDE
-# parameter varname = VCUR
-# parameter stdname = VCUR_sd
-# parameter u_qcflagname = UCUR_quality_control
-# parameter v_qcflagname = VCUR_quality_control
-# parameter qcflagvals = 0, 1, 2, 3
-
-# product == imos_ocean_currents
-# type = SLA
-# reader = xy_gridded
-# file=../../files/obs/ansr_2013/imos/ocean_currents/*2013020*.nc
-# file=../../files/obs/ansr_2013/imos/ocean_currents/*20130210*.nc
-# parameter timename = TIME 
-# parameter lonname = LONGITUDE
-# parameter latname = LATITUDE
-# parameter varname = GSLA
-# error_std = 0.1
-
-
-#####FINISH Implementation of the below####
-#product == imos_soop
-#type = sst 
-#file=../../files/obs/ansr_2013/imos/soop/*.nc
-#parameter timename = TIME
-#parameter lonname = LONGITUDE
-#parameter latname = LATITUDE
-#parameter varname = TEMP
-#parameter qcflagvals = Z
+product == imos_soop
+type = sst 
+reader = xy_scattered
+file=../../files/obs/ansr_2013/imos/soop/*.nc
+parameter timename = TIME
+parameter lonname = LONGITUDE
+parameter latname = LATITUDE
+parameter varname = TEMP
+parameter qcflagvals = Z
 ##^implement qcflags as characters for soop
 
-#product == glider
-#type = TEM 
-#reader = t_scattered
-#file=../../files/obs/ansr_2013/imos/glider/*.nc
-#parameter timename = TIME
-#parameter lonname = LONGITUDE
-#parameter latname = LATITUDE
-#parameter varname = TEMP
-#parameter zname = DEPTH
-##^implement pressure reader for generic glider?
+product == glider
+type = TEM 
+reader = xyz_scattered
+file=../../files/obs/ansr_2013/imos/glider/*.nc
+parameter timename = TIME
+parameter lonname = LONGITUDE
+parameter latname = LATITUDE
+parameter varname = TEMP
+parameter zname = DEPTH
 
-#product == glider
-#type = SAL
-#reader = t_scattered
-#file=../../files/obs/ansr_2013/imos/glider/*.nc
-#parameter timename = TIME
-#parameter lonname = LONGITUDE
-#parameter latname = LATITUDE
-#parameter varname = PSAL
-#parameter zname = DEPTH
-##^implement pressure reader for generic glider?
+product == glider
+type = SAL
+reader = xyz_scattered
+file=../../files/obs/ansr_2013/imos/glider/*.nc
+parameter timename = TIME
+parameter lonname = LONGITUDE
+parameter latname = LATITUDE
+parameter varname = PSAL
+parameter zname = DEPTH
 
 # product == argo_d
 # type = TEM
