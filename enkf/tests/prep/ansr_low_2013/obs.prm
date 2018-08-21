@@ -9,9 +9,10 @@ parameter varname = sea_surface_temperature
 parameter lonname = lon
 parameter latname = lat
 parameter varshift = -273.15
-error_std = 1.
-parameter qcflagname = l2p_flags
-parameter qcflagvals = 1
+#ignore for now
+#error_std = 1.
+#parameter qcflagname = l2p_flags
+#parameter qcflagvals =  
 parameter stdname = sst_standard_deviation
 
 product == jpl-mur
