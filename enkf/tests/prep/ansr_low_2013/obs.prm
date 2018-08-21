@@ -138,7 +138,7 @@ error_std = 0.25
 product == glider
 type = TEM 
 reader = xyz_scattered
-file=../../files/obs/ansr_2013/imos/glider/*.nc
+file=../../files/obs/ansr_2013/imos/gliders/*.nc
 parameter timename = TIME
 parameter lonname = LONGITUDE
 parameter latname = LATITUDE
@@ -149,7 +149,7 @@ error_std = 0.02
 product == glider
 type = SAL
 reader = xyz_scattered
-file=../../files/obs/ansr_2013/imos/glider/*.nc
+file=../../files/obs/ansr_2013/imos/gliders/*.nc
 parameter timename = TIME
 parameter lonname = LONGITUDE
 parameter latname = LATITUDE

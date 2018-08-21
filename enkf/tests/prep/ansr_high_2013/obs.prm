@@ -15,16 +15,16 @@ parameter varshift = -273.15
 #parameter qcflagvals =  
 parameter stdname = sst_standard_deviation
 
-product == jpl-mur
-type = sst
-reader = xy_gridded
+#product == jpl-mur
+#type = sst
+#reader = xy_gridded
 #file=https://podaac-opendap.jpl.nasa.gov:443/opendap/allData/ghrsst/data/GDS2/L4/GLOB/JPL/MUR/v4.1/2016/002/20160102090000-JPL-L4_GHRSST-SSTfnd-MUR-GLOB-v02.0-fv04.1.nc
-file=../../files/obs/ansr_2013/sst/jpl-mur/20130210*.nc
-parameter timename = time
-parameter varname = analysed_sst
-parameter lonname = lon
-parameter latname = lat
-parameter stdname = analysis_error
+#file=../../files/obs/ansr_2013/sst/jpl-mur/20130210*.nc
+#parameter timename = time
+#parameter varname = analysed_sst
+#parameter lonname = lon
+#parameter latname = lat
+#parameter stdname = analysis_error
 
 product == NAVO
 type = sst
@@ -131,28 +131,31 @@ parameter timename = TIME
 parameter lonname = LONGITUDE
 parameter latname = LATITUDE
 parameter varname = TEMP
-parameter qcflagvals = Z
+error_std = 0.25
+#parameter qcflagvals = Z
 ##^implement qcflags as characters for soop
 
 product == glider
 type = TEM 
 reader = xyz_scattered
-file=../../files/obs/ansr_2013/imos/glider/*.nc
+file=../../files/obs/ansr_2013/imos/gliders/*.nc
 parameter timename = TIME
 parameter lonname = LONGITUDE
 parameter latname = LATITUDE
 parameter varname = TEMP
 parameter zname = DEPTH
+error_std = 0.02
 
 product == glider
 type = SAL
 reader = xyz_scattered
-file=../../files/obs/ansr_2013/imos/glider/*.nc
+file=../../files/obs/ansr_2013/imos/gliders/*.nc
 parameter timename = TIME
 parameter lonname = LONGITUDE
 parameter latname = LATITUDE
 parameter varname = PSAL
 parameter zname = DEPTH
+error_std = 0.04
 
 # product == argo_d
 # type = TEM
