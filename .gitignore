@@ -1,5 +1,7 @@
 bin/
-*.nc
+#*.nc
+observations.nc
+observations-orig.nc
 log
 .mypy_cache*
 .pycache*
