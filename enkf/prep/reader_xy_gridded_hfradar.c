@@ -215,19 +215,19 @@ void reader_xy_gridded_hfradar(char* fname, int fid, obsmeta* meta, grid* g, obs
             v_qcflagname = meta->pars[i].value;
         else if (strcasecmp(meta->pars[i].name, "QCFLAGVALS") == 0) {
             char* pline = meta->pars[i].value;
-            int linelen = sizeof(pline);
-            char lineval[linelen];
-            char* line = strcpy(lineval,pline);
+            int linesize = sizeof(pline)+2;
+            char lineval[linesize];
+            char* line = memcpy(lineval, meta->pars[i].value,linesize);
             char seps[] = " ,";
             char* token;
             int val;
-
             qcflagvals = 0;
             while ((token = strtok(line, seps)) != NULL) {
                 if (!str2int(token, &val))
                     enkf_quit("%s: could not convert QCFLAGVALS entry \"%s\" to integer", meta->prmfname, token);
                 if (val < 0 || val > 31)
                     enkf_quit("%s: QCFLAGVALS entry = %d (supposed to be in [0,31] interval", meta->prmfname, val);
+                printf("%d\n",val);
                 qcflagvals |= 1 << val;
                 line = NULL;
             }
