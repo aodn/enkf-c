@@ -1,0 +1,42 @@
+# product == GLIDER
+# type = TEM 
+# reader = imos
+# file=http://thredds.aodn.org.au/thredds/dodsC/IMOS/ANFOG/slocum_glider/TwoRocks20160712/IMOS_ANFOG_BCEOPSTUV_20160712T030412Z_SL209_FV01_timeseries_END-20160725T002823Z.nc
+# parameter timename = TIME
+# parameter lonname = LONGITUDE
+# parameter latname = LATITUDE
+# parameter varname = TEMP
+# parameter zname = DEPTH
+# parameter qcflagname = TEMP_quality_control
+# parameter qcflagvals = 0, 1, 2
+# error_std = 0.25 EQUAL
+
+# product == GLIDER
+# type = SAL
+# reader = imos
+# file=http://thredds.aodn.org.au/thredds/dodsC/IMOS/ANFOG/slocum_glider/TwoRocks20160712/IMOS_ANFOG_BCEOPSTUV_20160712T030412Z_SL209_FV01_timeseries_END-20160725T002823Z.nc
+# parameter timename = TIME
+# parameter lonname = LONGITUDE
+# parameter latname = LATITUDE
+# parameter varname = PSAL
+# parameter zname = DEPTH
+# parameter qcflagname = PSAL_quality_control
+# parameter qcflagvals = 0, 1, 2
+# error_std = 0.15
+
+product == GLIDER
+type = TEM
+reader = xyz_scattered
+file=/home/holiveira/tmp/abc.nc
+parameter timename = time
+parameter lonname = lon
+parameter latname = lat
+parameter varname = var
+parameter zname = depth
+parameter estdname = estd
+#error_std = 0.01 PLUS
+#error_std = 0.01 PLUS
+#parameter stdname = estd
+#parameter qcflagname = PSAL_quality_control
+#parameter qcflagvals = 0, 1, 2
+

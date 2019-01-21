@@ -1,0 +1,16 @@
+product == test
+type = TEM
+reader = xyz_scattered
+file=../../files/obs/wa_subgridvar_test.nc
+parameter timename = time
+parameter lonname = lon
+parameter latname = lat
+parameter varname = var
+parameter zname = depth
+parameter estdname = estd
+error_std = 0.00 EQUAL
+error_std = 0.20 PLUS
+error_std = 0.45 PLUS
+error_std = 0.35 PLUS
+#error_std = 0.01 PLUS
+#parameter stdname = estd

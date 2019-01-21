@@ -865,13 +865,13 @@ void obs_write(observations* obs, char fname[])
     }
     assert(ii == nobs);
 
-    ncw_put_var_int(ncid, varid_id, id);
-    ncw_put_var_int(ncid, varid_idorig, id_orig);
+    /* ncw_put_var_int(ncid, varid_id, id); */
+    /* ncw_put_var_int(ncid, varid_idorig, id_orig); */
     ncw_put_var_short(ncid, varid_type, type);
-    ncw_put_var_short(ncid, varid_product, product);
-    ncw_put_var_short(ncid, varid_instrument, instrument);
+    /* ncw_put_var_short(ncid, varid_product, product); */
+    /* ncw_put_var_short(ncid, varid_instrument, instrument); */
     ncw_put_var_short(ncid, varid_fid, fid);
-    ncw_put_var_short(ncid, varid_batch, batch);
+    /* ncw_put_var_short(ncid, varid_batch, batch); */
     ncw_put_var_double(ncid, varid_value, value);
     ncw_put_var_double(ncid, varid_std, std);
     ncw_put_var_double(ncid, varid_lon, lon);
@@ -906,6 +906,429 @@ void obs_write(observations* obs, char fname[])
     free(status);
     free(aux);
 }
+
+
+void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[])
+{
+    int nobs = obs->nobs;
+    /* char tunits[MAXSTRLEN]; */
+
+    int ncid;
+    int dimid_nobs[1];
+
+    /* int varid_type, varid_product, varid_instrument, varid_id, varid_idorig, varid_fid, varid_batch, varid_value, varid_std, varid_lon, varid_lat, varid_depth, varid_mdepth, varid_fi, varid_fj, varid_fk, varid_date, varid_status, varid_aux; */
+    int varid_type, varid_product, varid_fid, varid_value, varid_var, varid_lon, varid_lat, varid_depth, varid_mdepth, varid_fi, varid_fj, varid_fk, varid_date, varid_status;
+
+    int* id;
+    int* id_orig;
+    short int* type;
+    short int* product;
+    short int* instrument;
+    short int* fid;
+    short int* batch;
+    double* value;
+    double* std;
+    double* var;
+    double* lon;
+    double* lat;
+    double* depth;
+    double* model_depth;
+    double* fi;
+    double* fj;
+    double* fk;
+    double* date;
+    double* obs_variance;
+    int* status;
+    int* aux;
+
+    int i, ii;
+
+    if (rank != 0)
+        return;
+
+    if (file_exists(fname))
+        enkf_quit("file \"%s\" already exists", fname);
+    ncw_create(fname, NC_NOCLOBBER | obs->ncformat, &ncid);
+
+
+    ncw_put_att_text(ncid, NC_GLOBAL, "type", "ROMS observations");
+    ncw_put_att_text(ncid, NC_GLOBAL, "title", name);
+    ncw_put_att_text(ncid, NC_GLOBAL, "origin", "AODN DeVL project.");
+    ncw_put_att_text(ncid, NC_GLOBAL, "point of contanct", "aodn@info.aodn.org.au");
+    ncw_put_att_text(ncid, NC_GLOBAL, "calendar_start","1990-01-01");
+    ncw_put_att_double(ncid, NC_GLOBAL, "offset from assimilation calendar",1, &obs->da_date);
+
+
+    /* ncw_put_att_double(ncid, NC_GLOBAL, "DA_JULDAY", 1, &obs->da_date); */
+   
+    // Obtain unique dates
+    int nsurvey;
+    double* survey_time;
+    int unique;
+    survey_time = malloc(obs->nobs * sizeof(double));
+    memset(survey_time,0,sizeof(double));
+    //store unique items
+    nsurvey=0;
+    for (i = 0; i < obs->nobs; ++i) {
+      observation* z = &obs->data[i];
+      unique = 1;
+      if (i == 0) {
+        ++nsurvey;
+        survey_time[i] = z->date;
+      } else {
+        for (ii = 0; ii < nsurvey; ++ii) {
+          if (z->date==survey_time[ii]){
+            unique = 0;
+            break;
+          }
+        }
+        if (unique==1) {
+          survey_time[nsurvey] = z->date;
+        }
+      }
+    }
+    int *tmp;
+    tmp = realloc(survey_time,nsurvey*sizeof(double));
+    free(tmp);
+   
+    //Obtain number of observations in each unique day
+    int* obs_in_survey;
+    obs_in_survey = malloc(nsurvey*sizeof(int));
+    memset(obs_in_survey,0,sizeof(int));
+    for (i = 0; i < obs->nobs; ++i) {
+      observation* z = &obs->data[i];
+      for (ii =0; ii < nsurvey; ++ii) {
+        if (z->date == survey_time[ii]) {
+          ++obs_in_survey[ii];
+        }
+      }
+    }
+
+    //Obtain the minimum of variance of superobs per state variable
+    //as a estimate of the lowest variance of each obs type
+     //Obtain number of observations in each unique day
+
+
+
+    int dimid_survey[1];
+    ncw_def_dim(ncid, "survey", nsurvey, dimid_survey);
+    
+    //Delay dimension creation to after reading variables ID's
+    int state_variable;
+    int dimid_state_variable[1];
+    state_variable = 7;
+    ncw_def_dim(ncid, "state_variable",state_variable, dimid_state_variable);
+
+    ncw_def_dim(ncid, "datum", nobs, dimid_nobs);
+
+    int varid_spherical;
+    int* spherical;
+    ncw_def_var(ncid, "spherical", NC_INT, 0, 0, &varid_spherical);
+    ncw_put_att_text(ncid, varid_spherical, "long_name", "grid type logical switch");
+    ncw_put_att_text(ncid, varid_spherical, "flag_values", "0, 1");
+    ncw_put_att_text(ncid, varid_spherical, "flag_meanings", "Cartesian spherical");
+
+    int varid_nobs;
+    ncw_def_var(ncid, "Nobs", NC_INT, 1, dimid_survey, &varid_nobs);
+    ncw_put_att_text(ncid, varid_nobs, "long_name", "number of observations with the same survey time");
+
+    int varid_survey_time;
+    ncw_def_var(ncid, "survey_time", NC_DOUBLE, 1, dimid_survey, &varid_survey_time);
+    ncw_put_att_text(ncid, varid_survey_time, "long_name", "survey time");
+
+    char* newdatestr;
+    newdatestr = strstr(obs->datestr," ");
+    ++newdatestr;
+
+    ncw_put_att_text(ncid, varid_survey_time, "units", newdatestr);
+    ncw_put_att_text(ncid, varid_survey_time, "calendar", "gregorian");
+
+    int varid_obs_variance;
+    ncw_def_var(ncid, "obs_variance", NC_DOUBLE, 1, dimid_state_variable,&varid_obs_variance);
+    ncw_put_att_text(ncid, varid_obs_variance, "long_name", "global time and space observation variance");
+    ncw_put_att_text(ncid, varid_obs_variance, "units", "squared state variable units");
+
+    int varid_obs_type;
+    ncw_def_var(ncid, "obs_type", NC_INT, 1, dimid_nobs, &varid_obs_type);
+    ncw_put_att_text(ncid, varid_obs_type, "long_name", "model state variable associated with observation");
+    //This are pretty much fixed.
+    ncw_put_att_text(ncid, varid_obs_type, "flag_values", "1, 2, 3, 4, 5, 6, 7");
+    ncw_put_att_text(ncid, varid_obs_type, "flag_meanings", "zeta ubar vbar u v temperature salinity");
+
+    /* ncw_def_var(ncid, "id", NC_INT, 1, dimid_nobs, &varid_id); */
+    /* ncw_put_att_text(ncid, varid_id, "long_name", "observation ID"); */
+    /* ncw_def_var(ncid, "id_orig", NC_INT, 1, dimid_nobs, &varid_idorig); */
+    /* ncw_put_att_text(ncid, varid_idorig, "long_name", "original observation ID"); */
+    /* ncw_put_att_text(ncid, varid_idorig, "description", "for primary observations - the serial number of the primary observation during the reading of data files; for superobs - the original ID of the very first observation collated into this observation"); */
+
+    ncw_def_var(ncid, "obs_provenance", NC_SHORT, 1, dimid_nobs, &varid_product);
+    ncw_put_att_text(ncid, varid_product, "long_name", "observation origin");
+
+    char product_flag_meanings[NC_MAX_NAME];
+    strcpy(product_flag_meanings,"");
+    
+    int psize;
+    psize = st_getsize(obs->products);
+    int product_flag_value[psize];
+
+    for (i = 0; i < psize; ++i){
+        strcat(product_flag_meanings,st_findstringbyindex(obs->products,i));
+        product_flag_value[i] = i;
+        if (i!=psize-1)
+          strcat(product_flag_meanings," ");
+    }
+    ncw_put_att_text(ncid, varid_product, "flag_meanings", product_flag_meanings);
+    ncw_put_att_int(ncid, varid_product, "flag_values", i, product_flag_value);
+
+
+    /* ncw_def_var(ncid, "instrument", NC_SHORT, 1, dimid_nobs, &varid_instrument); */
+    /* ncw_put_att_text(ncid, varid_instrument, "long_name", "observation instrument ID"); */
+    /* ncw_def_var(ncid, "batch", NC_SHORT, 1, dimid_nobs, &varid_batch); */
+    /* ncw_put_att_text(ncid, varid_batch, "long_name", "observation batch ID"); */
+
+    ncw_def_var(ncid, "obs_time", NC_FLOAT, 1, dimid_nobs, &varid_date);
+    ncw_put_att_text(ncid, varid_date, "long_name", "time of observation");
+    ncw_put_att_text(ncid, varid_date, "long_name", "time of observation");
+    ncw_put_att_text(ncid, varid_date, "units", newdatestr);
+    ncw_put_att_text(ncid, varid_date, "calendar", "gregorian");
+
+    ncw_def_var(ncid, "obs_depth", NC_FLOAT, 1, dimid_nobs, &varid_depth);
+    ncw_put_att_text(ncid, varid_depth, "long_name", "depth of observation");
+    ncw_put_att_text(ncid, varid_depth, "units", "meter");
+    ncw_put_att_text(ncid, varid_depth, "negative", "downwards");
+
+    ncw_def_var(ncid, "obs_Xgrid", NC_FLOAT, 1, dimid_nobs, &varid_fi);
+    ncw_put_att_text(ncid, varid_fi, "long_name", "observation fractional x-grid location");
+    ncw_def_var(ncid, "obs_Ygrid", NC_FLOAT, 1, dimid_nobs, &varid_fj);
+    ncw_put_att_text(ncid, varid_fj, "long_name", "observation fractional y-grid location");
+    ncw_def_var(ncid, "obs_Zgrid", NC_FLOAT, 1, dimid_nobs, &varid_fk);
+    ncw_put_att_text(ncid, varid_fk, "long_name", "observation fractional z-grid location");
+
+    ncw_def_var(ncid, "obs_error", NC_FLOAT, 1, dimid_nobs, &varid_var);
+    ncw_put_att_text(ncid, varid_var, "long_name", "observation error covariance");
+
+    ncw_def_var(ncid, "obs_value", NC_FLOAT, 1, dimid_nobs, &varid_value);
+    ncw_put_att_text(ncid, varid_value, "long_name", "observation value");
+
+    ncw_def_var(ncid, "obs_lon", NC_FLOAT, 1, dimid_nobs, &varid_lon);
+    ncw_put_att_text(ncid, varid_lon, "long_name", "observation longitude");
+    ncw_put_att_text(ncid, varid_lon, "units", "degrees_east");
+
+    ncw_def_var(ncid, "obs_lat", NC_FLOAT, 1, dimid_nobs, &varid_lat);
+    ncw_put_att_text(ncid, varid_lat, "long_name", "observation latitude");
+    ncw_put_att_text(ncid, varid_lat, "long_name", "degrees_north");
+
+  
+    
+    ncw_def_var(ncid, "fid", NC_SHORT, 1, dimid_nobs, &varid_fid);
+    ncw_put_att_text(ncid, varid_fid, "long_name", "observation data file ID");
+
+    ncw_def_var(ncid, "type", NC_SHORT, 1, dimid_nobs, &varid_type);
+    ncw_put_att_text(ncid, varid_type, "long_name", "observation type ID");
+
+    ncw_def_var(ncid, "model_depth", NC_FLOAT, 1, dimid_nobs, &varid_mdepth);
+    ncw_put_att_text(ncid, varid_mdepth, "long_name", "model bottom depth at the observation location");
+
+    ncw_def_var(ncid, "status", NC_BYTE, 1, dimid_nobs, &varid_status);
+    ncw_put_att_text(ncid, varid_status, "long_name", "observation status");
+    i = STATUS_OK;
+    ncw_put_att_int(ncid, varid_status, "STATUS_OK", 1, &i);
+    i = STATUS_OUTSIDEGRID;
+    ncw_put_att_int(ncid, varid_status, "STATUS_OUTSIDEGRID", 1, &i);
+    i = STATUS_LAND;
+    ncw_put_att_int(ncid, varid_status, "STATUS_LAND", 1, &i);
+    i = STATUS_SHALLOW;
+    ncw_put_att_int(ncid, varid_status, "STATUS_SHALLOW", 1, &i);
+    i = STATUS_RANGE;
+    ncw_put_att_int(ncid, varid_status, "STATUS_RANGE", 1, &i);
+    i = STATUS_BADBATCH;
+    ncw_put_att_int(ncid, varid_status, "STATUS_BADBATCH", 1, &i);
+    i = STATUS_OUTSIDEOBSDOMAIN;
+    ncw_put_att_int(ncid, varid_status, "STATUS_OUTSIDEOBSDOMAIN", 1, &i);
+    i = STATUS_OUTSIDEOBSWINDOW;
+    ncw_put_att_int(ncid, varid_status, "STATUS_OUTSIDEOBSWINDOW", 1, &i);
+    /* ncw_def_var(ncid, "aux", NC_INT, 1, dimid_nobs, &varid_aux); */
+    /* ncw_put_att_text(ncid, varid_aux, "long_name", "auxiliary information"); */
+    /* ncw_put_att_text(ncid, varid_aux, "description", "for primary observations - the ID of the superobservation it is collated into; for superobservations - the number of primary observations collated"); */
+    /* snprintf(tunits, MAXSTRLEN, "days from %s", obs->datestr); */
+    /* ncw_put_att_text(ncid, varid_date, "units", tunits); */
+
+    for (i = 0; i < obs->nobstypes; ++i)
+        ncw_put_att_int(ncid, varid_type, obs->obstypes[i].name, 1, &i);
+
+    /* for (i = 0; i < st_getsize(obs->products); ++i) */
+    /*     //TODO HERE: Apply differently */
+    /*     ncw_put_att_int(ncid, varid_product, st_findstringbyindex(obs->products, i), 1, &i); */
+
+    /* for (i = 0; i < st_getsize(obs->instruments); ++i) */
+    /*     ncw_put_att_int(ncid, varid_instrument, st_findstringbyindex(obs->instruments, i), 1, &i); */
+
+    for (i = 0; i < st_getsize(obs->datafiles); ++i) {
+        char attname[NC_MAX_NAME];
+        char* datafile = st_findstringbyindex(obs->datafiles, i);
+
+        snprintf(attname, NC_MAX_NAME, "%d", i);
+        ncw_put_att_text(ncid, varid_fid, attname, datafile);
+    }
+
+    if (obs->nccompression > 0)
+        ncw_def_deflate(ncid, 0, 1, obs->nccompression);
+    ncw_enddef(ncid);
+
+
+    id = malloc(nobs * sizeof(int));
+    id_orig = malloc(nobs * sizeof(int));
+    type = malloc(nobs * sizeof(short int));
+    product = malloc(nobs * sizeof(short int));
+    instrument = malloc(nobs * sizeof(short int));
+    fid = malloc(nobs * sizeof(short int));
+    batch = malloc(nobs * sizeof(short int));
+    value = malloc(nobs * sizeof(double));
+    std = malloc(nobs * sizeof(double));
+    var = malloc(nobs * sizeof(double));
+    lon = malloc(nobs * sizeof(double));
+    lat = malloc(nobs * sizeof(double));
+    depth = malloc(nobs * sizeof(double));
+    model_depth = malloc(nobs * sizeof(double));
+    fi = malloc(nobs * sizeof(double));
+    fj = malloc(nobs * sizeof(double));
+    fk = malloc(nobs * sizeof(double));
+    date = malloc(nobs * sizeof(double));
+    status = malloc(nobs * sizeof(int));
+    aux = malloc(nobs * sizeof(int));
+
+    int ounique;
+    int nvaru;
+    nvaru = 0;
+    int jj;
+    obs_variance = malloc(obs->nobs * sizeof(double));
+    memset(obs_variance,0,sizeof(double));
+
+    for (i = 0, ii = 0; i < obs->nobs; ++i) {
+        observation* m = &obs->data[i];
+
+        if (!isfinite(m->value) || fabs(m->value) > FLT_MAX || !isfinite((float) m->value))
+            enkf_quit("bad value");
+
+        type[ii] = m->type;
+        product[ii] = m->product;
+        instrument[ii] = m->instrument;
+        id[ii] = m->id;
+        fid[ii] = m->fid;
+        batch[ii] = m->batch;
+        /*
+         * id of the first ob contributed to this sob 
+         */
+        id_orig[ii] = m->id_orig;
+        value[ii] = m->value;
+        std[ii] = m->std;
+        var[ii] = m->std*m->std;
+        lon[ii] = m->lon;
+        lat[ii] = m->lat;
+        depth[ii] = fabs(m->depth)*-1;
+        model_depth[ii] = m->model_depth;
+        fi[ii] = m->fi;
+        fj[ii] = m->fj;
+        fk[ii] = m->fk;
+        date[ii] = m->date;
+        status[ii] = m->status;
+        aux[ii] = m->aux;
+
+        ounique = 1;
+        if (ii == 0) {
+          nvaru++;
+          obs_variance[ii] = var[ii];
+        } else {
+          for (jj=0; jj < ounique; ++jj) {
+            if (obs_variance[ii] == var[jj]) {
+              ounique=0;
+              break;
+
+            }
+          }
+          if (ounique==1) {
+            obs_variance[nvaru] = var[ii];
+          }
+        }
+
+        ii++;
+    }
+    assert(ii == nobs);
+    //store unique items
+    nsurvey=0;
+    for (i = 0; i < obs->nobs; ++i) {
+      observation* z = &obs->data[i];
+      unique = 1;
+      if (i == 0) {
+        ++nsurvey;
+        survey_time[i] = z->date;
+      } else {
+        for (ii = 0; ii < nsurvey; ++ii) {
+          if (z->date==survey_time[ii]){
+            unique = 0;
+            break;
+          }
+        }
+        if (unique==1) {
+          survey_time[nsurvey] = z->date;
+        }
+      }
+    }
+
+    //ROMS4DVAR variables
+    spherical = malloc(sizeof(int));
+    spherical[0] = 1;
+    
+    ncw_put_var_int(ncid, varid_spherical, spherical);
+    ncw_put_var_int(ncid,varid_nobs,obs_in_survey);
+    ncw_put_var_double(ncid,varid_survey_time,survey_time);
+
+
+//    ncw_put_var_double(ncid,varid_obs_variance,obs_variance);
+
+
+    /* ncw_put_var_int(ncid, varid_id, id); */
+    /* ncw_put_var_int(ncid, varid_idorig, id_orig); */
+    ncw_put_var_short(ncid, varid_type, type);
+    ncw_put_var_short(ncid, varid_product, product);
+    /* ncw_put_var_short(ncid, varid_instrument, instrument); */
+    ncw_put_var_short(ncid, varid_fid, fid);
+    /* ncw_put_var_short(ncid, varid_batch, batch); */
+    ncw_put_var_double(ncid, varid_value, value);
+    ncw_put_var_double(ncid, varid_var, var);
+    ncw_put_var_double(ncid, varid_lon, lon);
+    ncw_put_var_double(ncid, varid_lat, lat);
+    ncw_put_var_double(ncid, varid_depth, depth);
+    ncw_put_var_double(ncid, varid_mdepth, model_depth);
+    ncw_put_var_double(ncid, varid_fi, fi);
+    ncw_put_var_double(ncid, varid_fj, fj);
+    ncw_put_var_double(ncid, varid_fk, fk);
+    ncw_put_var_double(ncid, varid_date, date);
+    ncw_put_var_int(ncid, varid_status, status);
+    /* ncw_put_var_int(ncid, varid_aux, aux); */
+
+    ncw_close(ncid);
+    free(type);
+    free(product);
+    free(instrument);
+    free(id);
+    free(id_orig);
+    free(fid);
+    free(batch);
+    free(value);
+    free(std);
+    free(lon);
+    free(lat);
+    free(depth);
+    free(model_depth);
+    free(fi);
+    free(fj);
+    free(fk);
+    free(date);
+    free(status);
+    free(aux);
+}
+
 
 /**
  */

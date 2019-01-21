@@ -31,7 +31,9 @@ void model_addorreplacedata(model* m, char tag[], int vid, int alloctype, void* 
 void* model_getdata(model* m, char tag[]);
 int model_getdataalloctype(model* m, char tag[]);
 
+char* model_getname(model* m);
 int model_getnvar(model* m);
+variable* model_getvars(model* m);
 char* model_getvarname(model* m, int varid);
 int model_getvarid(model* m, char* varname, int hastosucceed);
 void model_getvarinflation(model* m, int varid, float* inflation, double* inf_ratio);

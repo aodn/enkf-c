@@ -1,0 +1,71 @@
+product == IMOS-HF-RADAR
+type = Usurf
+reader = xy_gridded
+file=../../files/obs/4dvar_NH_obs.nc
+parameter timename = TIME
+parameter varname = UCUR
+parameter lonname = LONGITUDE
+parameter latname = LATITUDE
+parameter stdname = UCUR_sd
+parameter qcflagname = UCUR_quality_control
+parameter qcflagvals = 0, 1, 2, 3
+
+product == IMOS-HF-RADAR
+type = Vsurf
+reader = xy_gridded
+file=../../files/obs/4dvar_NH_obs.nc
+parameter timename = TIME
+parameter varname = VCUR
+parameter lonname = LONGITUDE
+parameter latname = LATITUDE
+parameter stdname = VCUR_sd
+parameter qcflagname = VCUR_quality_control
+parameter qcflagvals = 0, 1, 2, 3
+
+product == imos-SST
+type = SST
+reader = xy_gridded
+file=../../files/obs/4dvar_NH_obs.nc
+parameter timename = TIME
+parameter varname = VCUR
+parameter lonname = LONGITUDE
+parameter latname = LATITUDE
+parameter stdname = VCUR_sd
+parameter qcflagname = VCUR_quality_control
+parameter qcflagvals = 0, 1, 2, 3
+
+product == imos-SSS
+type = SSS
+reader = xy_gridded
+file=../../files/obs/4dvar_NH_obs.nc
+parameter timename = TIME
+parameter varname = VCUR
+parameter lonname = LONGITUDE
+parameter latname = LATITUDE
+parameter stdname = VCUR_sd
+parameter qcflagname = VCUR_quality_control
+parameter qcflagvals = 0, 1, 2, 3
+
+product == aviso
+type = UGEO
+reader = xy_gridded
+file=../../files/obs/4dvar_NH_obs.nc
+parameter timename = TIME
+parameter varname = VCUR
+parameter lonname = LONGITUDE
+parameter latname = LATITUDE
+parameter stdname = VCUR_sd
+parameter qcflagname = VCUR_quality_control
+parameter qcflagvals = 0, 1, 2, 3
+
+product == aviso
+type = VGEO
+reader = xy_gridded
+file=../../files/obs/4dvar_NH_obs.nc
+parameter timename = TIME
+parameter varname = VCUR
+parameter lonname = LONGITUDE
+parameter latname = LATITUDE
+parameter stdname = VCUR_sd
+parameter qcflagname = VCUR_quality_control
+parameter qcflagvals = 0, 1, 2, 3

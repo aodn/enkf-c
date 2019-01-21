@@ -12,6 +12,7 @@
  * Revisions:
   *****************************************************************************/
 
+#include <libgen.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -176,7 +177,7 @@ static int cmp_obs(const void* p1, const void* p2, void* p)
     ot = &obs->obstypes[m1->type];
     if (ot->isasync) {
         i1 = get_tshift(m1->date, ot->async_tstep, ot->async_centred);
-        i2 = get_tshift(m2->date, ot->async_tstep, ot->async_centred);
+        i2 = get_tshift(m2->date, ot->async_tstep, ot->async_centred);        
         if (i1 > i2)
             return 1;
         if (i2 > i1)
@@ -256,6 +257,12 @@ int main(int argc, char* argv[])
     obstypes_set(obs->nobstypes, obs->obstypes, m);
     obs->allobs = log_all_obs;
     obs->model = m;
+    
+    int namelen = strlen(model_getname(m));
+    char name4dvar[namelen];
+    variable* vars4dvar;
+    strcpy(name4dvar,model_getname(m));
+    vars4dvar = model_getvars(m);
 
     enkf_printf("  reading observations:\n");
     for (i = 0; i < nmeta; i++)
@@ -268,6 +275,7 @@ int main(int argc, char* argv[])
     if (write_orig_obs && describe_superob_id < 0) {
         enkf_printf("  writing observations to \"%s\":\n", FNAME_OBS);
         obs_write(obs, FNAME_OBS);
+        obs_write_4dvar(obs, name4dvar, vars4dvar, "observations-orig-ROMS-4DVAR.nc");
     }
 
     if (do_superob) {
@@ -279,6 +287,7 @@ int main(int argc, char* argv[])
 
         enkf_printf("  writing superobservations to \"%s\":\n", FNAME_SOBS);
         obs_write(sobs, FNAME_SOBS);
+        obs_write_4dvar(sobs, name4dvar, vars4dvar, "observations-ROMS-4DVAR.nc");
         free(sobs->data);
         enkf_printf("  reading super-observations from disk:\n");
         obs_read(sobs, FNAME_SOBS);
@@ -295,6 +304,7 @@ int main(int argc, char* argv[])
             file_delete(FNAME_SOBS);
             enkf_printf("  writing good superobservations to \"%s\":\n", FNAME_SOBS);
             obs_write(sobs, FNAME_SOBS);
+            obs_write_4dvar(sobs, name4dvar, vars4dvar, "observations-ROMS-4DVAR.nc");
         } else
             enkf_printf("    all good\n");
     } else {
@@ -303,6 +313,7 @@ int main(int argc, char* argv[])
         memcpy(data, obs->data, obs->ngood * sizeof(observation));
         sobs = obs_create_fromdata(obs, obs->ngood, data);
         obs_write(sobs, FNAME_SOBS);
+        obs_write_4dvar(sobs, name4dvar, vars4dvar, "observations-ROMS-4DVAR.nc");
         goto finalise;
     }
 

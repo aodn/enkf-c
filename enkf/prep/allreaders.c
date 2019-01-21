@@ -36,6 +36,9 @@ typedef struct {
 obsreader_entry allreaders[] = {
     {"RADS", "standard", reader_rads_standard},
     {"RADS", "standard2", reader_rads_standard2},
+    {"External_rads-ib_sla_dm", "standard", reader_rads_standard},
+    {"External_rads-ib_sla_dm", "standard2", reader_rads_standard2},
+
     {"NAVO", "standard", reader_navo_standard},
     {"WINDSAT", "standard", reader_windsat_standard},
     {"PATHFINDER", "standard", reader_pathfinder_standard},

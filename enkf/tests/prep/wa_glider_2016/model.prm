@@ -1,0 +1,7 @@
+NAME = test-glider-wa
+
+VAR = temp
+GRID = grid-t
+
+VAR = salt
+GRID = grid-t

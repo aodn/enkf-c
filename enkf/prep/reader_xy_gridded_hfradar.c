@@ -170,7 +170,7 @@ void reader_xy_gridded_hfradar(char* fname, int fid, obsmeta* meta, grid* g, obs
 
     int have_time = 1;
     int singletime = -1;
-    float* time = NULL;
+    double* time = NULL;
     float time_add_offset = NAN, time_scale_factor = NAN;
     float time_fill_value = NAN;
     char tunits[MAXSTRLEN];
@@ -227,7 +227,6 @@ void reader_xy_gridded_hfradar(char* fname, int fid, obsmeta* meta, grid* g, obs
                     enkf_quit("%s: could not convert QCFLAGVALS entry \"%s\" to integer", meta->prmfname, token);
                 if (val < 0 || val > 31)
                     enkf_quit("%s: QCFLAGVALS entry = %d (supposed to be in [0,31] interval", meta->prmfname, val);
-                printf("%d\n",val);
                 qcflagvals |= 1 << val;
                 line = NULL;
             }
@@ -550,14 +549,14 @@ void reader_xy_gridded_hfradar(char* fname, int fid, obsmeta* meta, grid* g, obs
 
         if (timelen == 1) {
             singletime = 1;
-            time = malloc(sizeof(float));
+            time = malloc(sizeof(double));
         } else {
             singletime = 0;
             assert(timelen == n);
-            time = malloc(n * sizeof(float));
+            time = malloc(n * sizeof(double));
         }
 
-        ncw_get_var_float(ncid, varid_time, time);
+        ncw_get_var_double(ncid, varid_time, time);
         if (ncw_att_exists(ncid, varid_time, "_FillValue"))
             ncw_get_att_float(ncid, varid_time, "_FillValue", &time_fill_value);
         if (ncw_att_exists(ncid, varid_time, "add_offset")) {
@@ -686,15 +685,23 @@ void reader_xy_gridded_hfradar(char* fname, int fid, obsmeta* meta, grid* g, obs
         }
 
         if (have_time) {
-            float t = (singletime) ? time[0] : time[i];
+            double t = (singletime) ? time[0] : time[i];
 
             if (!isnan(time_add_offset))
+            {
                 o->date = (double) (t * time_scale_factor + time_add_offset) * tunits_multiple + tunits_offset;
+                enkf_printf("t=%f,tunits_multiple=%f,time_scale_factor=%f,time_add_offset=%f,tunits_offset=%f\n",t,tunits_multiple,time_scale_factor,time_add_offset,tunits_offset);
+
+            }
             else
-                o->date = (double) t* tunits_multiple + tunits_offset;
+            {
+                o->date = (double) (t* tunits_multiple + tunits_offset);
+                enkf_printf("t=%f,tunits_multiple=%f,tunits_offset=%f\n",t,tunits_multiple,tunits_offset);
+                enkf_printf("date=%f\n",o->date);
+
+            }
         } else
             o->date = NAN;
-
         o->aux = -1;
 
         obs->nobs++;
