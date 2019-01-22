@@ -1,0 +1,21 @@
+product == HFRADAR
+type = U
+reader = imos
+file=http://thredds.aodn.org.au/thredds/dodsC/IMOS/ACORN/gridded_1h-avg-current-map_QC/ROT/2016/01/01/IMOS_ACORN_V_20160101T003000Z_ROT_FV01_1-hour-avg.nc
+file=http://thredds.aodn.org.au/thredds/dodsC/IMOS/ACORN/gridded_1h-avg-current-map_QC/ROT/2016/01/01/IMOS_ACORN_V_20160101T003000Z_ROT_FV01_1-hour-avg.nc
+file=http://thredds.aodn.org.au/thredds/dodsC/IMOS/ACORN/gridded_1h-avg-current-map_QC/ROT/2016/01/01/IMOS_ACORN_V_20160101T003000Z_ROT_FV01_1-hour-avg.nc
+parameter VARNAME = UCUR
+parameter ESTDNAME = UCUR_sd
+parameter U_QCFLAGNAME = UCUR_quality_control
+parameter QCFLAGVALS = 0, 1, 2, 3
+
+product == HFRADAR
+type = V
+reader = imos
+file=http://thredds.aodn.org.au/thredds/dodsC/IMOS/ACORN/gridded_1h-avg-current-map_QC/ROT/2016/01/01/IMOS_ACORN_V_20160101T003000Z_ROT_FV01_1-hour-avg.nc
+file=http://thredds.aodn.org.au/thredds/dodsC/IMOS/ACORN/gridded_1h-avg-current-map_QC/ROT/2016/01/01/IMOS_ACORN_V_20160101T003000Z_ROT_FV01_1-hour-avg.nc
+file=http://thredds.aodn.org.au/thredds/dodsC/IMOS/ACORN/gridded_1h-avg-current-map_QC/ROT/2016/01/01/IMOS_ACORN_V_20160101T003000Z_ROT_FV01_1-hour-avg.nc
+parameter VARNAME = UCUR
+parameter ESTDNAME = UCUR_sd
+parameter V_QCFLAGNAME = VCUR_quality_control
+parameter QCFLAGVALS = 0, 1, 2, 3

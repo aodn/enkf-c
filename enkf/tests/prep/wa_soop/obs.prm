@@ -1,0 +1,9 @@
+product == test
+type = TEM
+reader = xy_scattered
+file=../../files/obs/ansr_2013/imos/soop/*.nc
+parameter timename = TIME
+parameter lonname = LATITUDE
+parameter latname = LONGITUDE
+parameter varname = TEMP
+error_std = 0.20 EQUAL

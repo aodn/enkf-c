@@ -1,0 +1,5 @@
+NAME = test-hfradar-rotation
+VAR = u
+GRID = grid-t
+VAR = v
+GRID = grid-t

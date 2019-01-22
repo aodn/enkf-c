@@ -1,0 +1,16 @@
+NAME = test-ansr-low-2016
+
+VAR = temp
+GRID = grid-t
+
+VAR = salt
+GRID = grid-t
+
+VAR = u
+GRID = grid-t
+
+VAR = v
+GRID = grid-t
+
+VAR = zeta
+GRID = grid-t

@@ -1,0 +1,28 @@
+NAME = sst
+VAR = temp
+ISSURFACE = 1
+HFUNCTION = standard
+MINVALUE = -2.0
+MAXVALUE = 40.0
+
+NAME = sss
+VAR = salt
+ISSURFACE = 1
+HFUNCTION = standard
+MINVALUE = 33.0
+MAXVALUE = 40.0
+
+NAME = SAL
+VAR = temp
+ISSURFACE = 0
+HFUNCTION = standard
+MINVALUE = 33.0
+MAXVALUE = 42.0
+
+NAME = TEM
+VAR = temp
+ISSURFACE = 0
+HFUNCTION = standard
+MINVALUE = -2.0
+MAXVALUE = 40.0
+

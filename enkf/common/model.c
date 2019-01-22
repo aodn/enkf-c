@@ -434,11 +434,20 @@ int model_getdataalloctype(model* m, char tag[])
 
 /**
  */
+char* model_getname(model* m)
+{
+    return m->name;
+}
+
 int model_getnvar(model* m)
 {
     return m->nvar;
 }
 
+variable* model_getvars(model* m)
+{
+    return m->vars;
+}
 /**
  */
 char* model_getvarname(model* m, int varid)

@@ -1,0 +1,3 @@
+NAME = test-jpl-on-rho-points
+VAR = temp
+GRID = grid-t

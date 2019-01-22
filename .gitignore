@@ -1,0 +1,10 @@
+bin/
+#*.nc
+observations.nc
+observations-orig.nc
+log
+.mypy_cache*
+.pycache*
+*.py
+*.png
+.pytest_cache*

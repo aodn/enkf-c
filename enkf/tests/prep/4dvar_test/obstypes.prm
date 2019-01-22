@@ -1,0 +1,56 @@
+NAME = SST
+VAR = temperature
+ISSURFACE = 1
+HFUNCTION = standard
+MINVALUE = -1.6
+MAXVALUE = +1.6
+
+NAME = SSS
+VAR = salinity
+ISSURFACE = 1
+HFUNCTION = standard
+MINVALUE = -1.6
+MAXVALUE = +1.6
+
+
+NAME = UGEO
+VAR = u2d
+ISSURFACE = 1
+HFUNCTION = standard
+MINVALUE = -1.6
+MAXVALUE = +1.6
+
+NAME = VGEO
+VAR = v2d
+ISSURFACE = 1
+HFUNCTION = standard
+MINVALUE = -1.6
+MAXVALUE = +1.6
+
+NAME = Vsurf
+VAR = v3d
+ISSURFACE = 0
+HFUNCTION = standard
+MINVALUE = -1.6
+MAXVALUE = +1.6
+
+NAME = Usurf
+VAR = u3d
+ISSURFACE = 0
+HFUNCTION = standard
+MINVALUE = -1.6
+MAXVALUE = +1.6
+
+NAME = U
+VAR = u3d
+ISSURFACE = 0
+HFUNCTION = standard
+MINVALUE = -1.6
+MAXVALUE = +1.6
+
+NAME = V
+VAR = v3d
+ISSURFACE = 0
+HFUNCTION = standard
+MINVALUE = -1.6
+MAXVALUE = +1.6

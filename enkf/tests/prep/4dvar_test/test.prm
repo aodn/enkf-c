@@ -1,0 +1,13 @@
+MODE = EnOI
+
+OBS = obs.prm
+MODEL = model.prm
+GRID = grid.prm
+OBSTYPES = obstypes.prm
+
+DATE = 0.0 days since 1968-05-23 00:00:00 GMT
+#WINDOWMIN = -30
+#WINDOWMAX = +30
+
+NCFORMAT = NETCDF4
+NCCOMPRESSION = 1

@@ -1,0 +1,14 @@
+NAME = grid-t
+VTYPE = sigma
+DATA = ../../files/grids/cwa_grid_rotated.nc
+VDIR = tosurf
+MASKVARNAME = mask_rho
+XVARNAME = lon_rho
+YVARNAME = lat_rho
+ANGLE = angle
+DEPTHVARNAME = h
+CVARNAME = Cs_r
+CCVARNAME = Cs_w
+HCVARNAME = hc
+SVARNAME = s_rho
+SCVARNAME = s_w

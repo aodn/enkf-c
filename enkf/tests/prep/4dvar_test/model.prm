@@ -1,0 +1,13 @@
+NAME = test-hfradar
+VAR = temperature
+GRID = grid-t
+VAR = salinity
+GRID = grid-t
+VAR = u2d
+GRID = grid-t
+VAR = v2d
+GRID = grid-t
+VAR = u3d
+GRID = grid-t
+VAR = v3d
+GRID = grid-t

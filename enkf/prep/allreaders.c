@@ -36,6 +36,9 @@ typedef struct {
 obsreader_entry allreaders[] = {
     {"RADS", "standard", reader_rads_standard},
     {"RADS", "standard2", reader_rads_standard2},
+    {"External_rads-ib_sla_dm", "standard", reader_rads_standard},
+    {"External_rads-ib_sla_dm", "standard2", reader_rads_standard2},
+
     {"NAVO", "standard", reader_navo_standard},
     {"WINDSAT", "standard", reader_windsat_standard},
     {"PATHFINDER", "standard", reader_pathfinder_standard},
@@ -51,6 +54,7 @@ obsreader_entry allreaders[] = {
     {"ALL", "xyz_scattered", reader_xyz_scattered},
     {"ALL", "xyz_gridded", reader_xyz_gridded},
     {"ALL", "xyh_gridded", reader_xyh_gridded},
+    {"HFRADAR", "imos", reader_xy_gridded_hfradar}
 };
 
 /**

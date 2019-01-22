@@ -1,0 +1,48 @@
+NAME = SLA
+VAR = zeta 
+ISSURFACE = 1
+HFUNCTION = standard
+MINVALUE = -1.0
+MAXVALUE = +1.0
+
+NAME = sst
+VAR = temp
+ISSURFACE = 1
+HFUNCTION = standard
+MINVALUE = -2.0
+MAXVALUE = 40.0
+
+NAME = sss
+VAR = salt
+ISSURFACE = 1
+HFUNCTION = standard
+MINVALUE = 33.0
+MAXVALUE = 40.0
+
+NAME = SAL
+VAR = temp
+ISSURFACE = 0
+HFUNCTION = standard
+MINVALUE = 33.0
+MAXVALUE = 42.0
+
+NAME = TEM
+VAR = temp
+ISSURFACE = 0
+HFUNCTION = standard
+MINVALUE = -2.0
+MAXVALUE = 40.0
+
+NAME = u_surf
+VAR = u 
+ISSURFACE = 1
+HFUNCTION = standard
+MINVALUE = -1.6
+MAXVALUE = +1.6
+
+NAME = v_surf
+VAR = v
+ISSURFACE = 1
+HFUNCTION = standard
+MINVALUE = -1.6
+MAXVALUE = +1.6

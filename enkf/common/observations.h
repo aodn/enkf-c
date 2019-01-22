@@ -122,6 +122,7 @@ void obs_calcstats(observations* obs);
 void obs_markbadbatches(observations* obs);
 void obs_read(observations* obs, char fname[]);
 void obs_write(observations* obs, char fname[]);
+void obs_write_4dvar(observations* obs,char* name, variable* vars, char fname[]);
 void obs_writeaux(observations* obs, char fname[]);
 int obs_modifiederrors_alreadywritten(observations* obs, char fname[]);
 void obs_superob(observations* obs, __compar_d_fn_t cmp_obs, observations** sobs, int sobid, int do_thin);

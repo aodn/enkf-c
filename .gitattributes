@@ -1,0 +1,2 @@
+enkf/arch/make.inc.linux-desktop-lapack merge=ours
+enkf/Makefile merge=ours

@@ -1,0 +1,3 @@
+arch/make.inc.linux-desktop-lapack merge=ours
+Makefile merge=ours
+.gitattributes merge=ours
