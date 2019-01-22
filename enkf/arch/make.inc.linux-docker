@@ -17,9 +17,9 @@
 # and add /usr/lib64/mpi/gcc/openmpi/bin to $PATH.
 
 
-LD_PATH = -Wl,-rpath,/root/gridutils-c/lib
+LD_PATH = -Wl,-rpath,/root/gridutils-c/lib -Wl,-rpath,/usr/lib/x86_64-linux-gnu/hdf5/serial
 
-LIB_NC = -lnetcdf -lhdf5 -lhdf5_hl
+LIB_NC = -lnetcdf
 LIB_LAPACK = -llapack -lblas -lgfortran
 LIB_M = -lm
 
@@ -39,7 +39,7 @@ LIB_GU = -L/root/gridutils-c/lib -lgu
 # choose gcc if you do not have clang
 #
 CC = gcc
-CFLAGS = -g -pedantic -Wall -std=c99 -D_GNU_SOURCE -Os
+CFLAGS = -g -pedantic -Wall -std=c99 -D_GNU_SOURCE -Os -L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5 -lhdf5_hl -L/root/gridutils-c/lib 
 
 # which compiler/flags to use with MPI
 #
