@@ -75,6 +75,7 @@ prep/reader_h8.c\
 prep/reader_viirs.c\
 prep/reader_xy_scattered.c\
 prep/reader_xy_gridded.c\
+prep/reader_xy_gridded_imos_hfradar.c\
 prep/reader_xyz_scattered.c\
 prep/reader_xyz_gridded.c\
 prep/reader_xyh_gridded.c\
