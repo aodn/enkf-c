@@ -40,15 +40,38 @@ obsreader_entry allreaders[] = {
     {"External_rads-ib_sla_dm", "standard2", reader_rads_standard2},
 
     {"NAVO", "standard", reader_navo_standard},
+    {"External_navo_temp_sst_dm", "standard", reader_navo_standard},
+
     {"WINDSAT", "standard", reader_windsat_standard},
+    {"External_windsat_temp_sst_dm", "standard", reader_windsat_standard},
+
     {"PATHFINDER", "standard", reader_pathfinder_standard},
+    {"External_pathfinder_temp_sst_dm", "standard", reader_pathfinder_standard},
+
     {"CARS", "standard", reader_cars_standard},
+    {"External_cars_temp_profile_dm", "standard", reader_cars_standard},
+    {"External_cars_salt_profile_dm", "standard", reader_cars_standard},
+
     {"MMT", "standard", reader_mmt_standard},
+    {"External_mmt_temp_profile_dm", "standard", reader_mmt_standard},
+    {"External_mmt_salt_profile_dm", "standard", reader_mmt_standard},
+
     {"AMSR2", "standard", reader_amsr2_standard},
+    {"External_amsr2_temp_sst_dm", "standard", reader_amsr2_standard},
+
     {"AMSRE", "standard", reader_amsre_standard},
+    {"External_amsre_temp_sstskin_dm", "standard", reader_amsre_standard},
+
     {"HIMAWARI8", "standard", reader_h8_standard},
+    {"External_himawari8_temp_sst_dm", "standard", reader_h8_standard},
+
     {"VIIRS", "standard", reader_viirs_standard},
+    {"External_viirs_temp_sstskin_dm", "standard", reader_viirs_standard},
+
     {"CMEMS", "standard", reader_cmems_standard},
+    {"External_cmems_temp_profile_dm", "standard", reader_cmems_standard},
+    {"External_cmems_salt_profile_dm", "standard", reader_cmems_standard},
+
     {"ALL", "xy_scattered", reader_xy_scattered},
     {"ALL", "xy_gridded", reader_xy_gridded},
     {"ALL", "xyz_scattered", reader_xyz_scattered},
