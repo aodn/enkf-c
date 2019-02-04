@@ -33,7 +33,7 @@
 #include "allreaders.h"
 
 #define EPS 1.0e-6
-#define WMO_INSTSIZE 4
+#define WMO_INSTSIZE 64
 
 /**
  */
@@ -115,11 +115,11 @@ void reader_mmt_standard(char* fname, int fid, obsmeta* meta, grid* g, observati
     z = alloc2d(nprof, nz, sizeof(double));
     ncw_get_var_double(ncid, varid, z[0]);
 
-    if (strncmp(meta->type, "TEM", 3) == 0) {
+    if ((strncmp(meta->type, "TEM", 3) == 0) || (strncmp(meta->type, "TEMP", 4))) {
         validmin = -2.0;
         validmax = 40.0;
         ncw_inq_varid(ncid, "TEMP_BLUELINK", &varid);
-    } else if (strncmp(meta->type, "SAL", 3) == 0) {
+    } else if ((strncmp(meta->type, "SAL", 3) == 0) || (strncmp(meta->type, "SALT", 4))) {
         validmin = 0;
         validmax = 50.0;
         ncw_inq_varid(ncid, "PSAL_BLUELINK", &varid);
@@ -130,12 +130,12 @@ void reader_mmt_standard(char* fname, int fid, obsmeta* meta, grid* g, observati
     ncw_get_att_double(ncid, varid, "_FillValue", &missval);
 
     varid = -1;
-    if (strncmp(meta->type, "TEM", 3) == 0) {
+    if ((strncmp(meta->type, "TEM", 3) == 0) || (strncmp(meta->type, "TEMP", 4))) {
         if (ncw_var_exists(ncid, "TEMP_BLUELINK_QC"))
             ncw_inq_varid(ncid, "TEMP_BLUELINK_QC", &varid);
         else
             enkf_printf("        no \"TEMP_BLUELINK_QC\" flag\n");
-    } else if (strncmp(meta->type, "SAL", 3) == 0) {
+    } else if ((strncmp(meta->type, "SAL", 3) == 0) || (strncmp(meta->type, "SALT", 4)) ){
         if (ncw_var_exists(ncid, "PSAL_BLUELINK_QC"))
             ncw_inq_varid(ncid, "PSAL_BLUELINK_QC", &varid);
         else

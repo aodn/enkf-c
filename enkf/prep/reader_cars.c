@@ -108,9 +108,9 @@ void reader_cars_standard(char* fname, int fid, obsmeta* meta, grid* g, observat
     z = alloc2d(nprof, nz, sizeof(double));
     ncw_get_var_double(ncid, varid_z, z[0]);
 
-    if (strncmp(meta->type, "TEM", 3) == 0)
+    if (strncmp(meta->type, "TEM", 3) == 0 || strncmp(meta->type, "temp", 4) == 0 )
         ncw_inq_varid(ncid, "temp", &varid_v);
-    else if (strncmp(meta->type, "SAL", 3) == 0)
+    else if (strncmp(meta->type, "SAL", 3) == 0 || strncmp(meta->type, "salt", 4) == 0)
         ncw_inq_varid(ncid, "salt", &varid_v);
     else
         enkf_quit("observation type \"%s\" not handled for CARS product", meta->type);
