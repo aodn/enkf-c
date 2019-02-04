@@ -286,6 +286,7 @@ int main(int argc, char* argv[])
     if (write_orig_obs && describe_superob_id < 0) {
         enkf_printf("  writing observations to \"%s\":\n", FNAME_OBS);
         obs_write(obs, FNAME_OBS);
+        enkf_printf("  writing observations to \"%s\":\n", "observations-orig-ROMS-4DVAR.nc");
         obs_write_4dvar(obs, name4dvar, vars4dvar, "observations-orig-ROMS-4DVAR.nc");
     }
 
@@ -298,7 +299,6 @@ int main(int argc, char* argv[])
 
         enkf_printf("  writing superobservations to \"%s\":\n", FNAME_SOBS);
         obs_write(sobs, FNAME_SOBS);
-        obs_write_4dvar(sobs, name4dvar, vars4dvar, "observations-ROMS-4DVAR.nc");
         free(sobs->data);
         enkf_printf("  reading super-observations from disk:\n");
         obs_read(sobs, FNAME_SOBS);
@@ -315,9 +315,11 @@ int main(int argc, char* argv[])
             file_delete(FNAME_SOBS);
             enkf_printf("  writing good superobservations to \"%s\":\n", FNAME_SOBS);
             obs_write(sobs, FNAME_SOBS);
-            obs_write_4dvar(sobs, name4dvar, vars4dvar, "observations-ROMS-4DVAR.nc");
         } else
             enkf_printf("    all good\n");
+        enkf_printf("  writing good superobservations to \"%s\":\n", "observations-ROMS-4DVAR.nc");
+        obs_write_4dvar(sobs, name4dvar, vars4dvar, "observations-ROMS-4DVAR.nc");
+
     } else {
         observation* data = malloc(obs->ngood * sizeof(observation));
 
@@ -330,7 +332,7 @@ int main(int argc, char* argv[])
     }
 
     /*
-     * write superob indices to the file with original observations 
+     * write superob indices to the file with original observations
      */
     if (write_orig_obs && describe_superob_id < 0 && do_superob)
         obs_writeaux(obs, FNAME_OBS);
