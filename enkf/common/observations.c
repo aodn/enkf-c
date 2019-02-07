@@ -1002,8 +1002,8 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
     ncw_put_att_text(ncid, NC_GLOBAL, "origin", "AODN DeVL project.");
     ncw_put_att_text(ncid, NC_GLOBAL, "point of contanct", "aodn@info.aodn.org.au");
     ncw_put_att_text(ncid, NC_GLOBAL, "calendar_start","1990-01-01");
+    ncw_put_att_text(ncid, NC_GLOBAL, "survey_time_details", "Unique hours in the current assimilation window");
     ncw_put_att_double(ncid, NC_GLOBAL, "offset from assimilation calendar",1, &obs->da_date);
-
 
     /* ncw_put_att_double(ncid, NC_GLOBAL, "DA_JULDAY", 1, &obs->da_date); */
    
@@ -1017,19 +1017,14 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
     double odate_clip = 0.;
 
     survey_time = malloc(obs->nobs * sizeof(double));
+    survey_time[0] = 0.0;
     obs_in_survey = malloc(obs->nobs * sizeof(int));
     for (i = 0; i < obs->nobs; ++i) {
-      survey_time[i] = 0.;
       obs_in_survey[i] = 0;
     }
     
-    z = &obs->data[0];
-    odate = &z->date;
-    survey_time[0] = to_hour_slot(* odate);
-    obs_in_survey[0] = 1;
-    
-    nsurvey=1;
-    for (i = 1; i < obs->nobs; ++i) {
+    nsurvey=0;
+    for (i = 0; i < obs->nobs; ++i) {
       unique = 1;
       z = &obs->data[i];
       odate = &z->date;
@@ -1046,6 +1041,9 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
         ++nsurvey;
       }
     }
+
+    if (nsurvey == 0)
+      ++nsurvey;
 
     int *tmp;
     tmp = realloc(survey_time,nsurvey*sizeof(double));
