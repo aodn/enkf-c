@@ -948,6 +948,11 @@ void obs_write(observations* obs, char fname[])
 #endif
 }
 
+double to_hour_slot(double x)
+{
+  return ((double) ((int) (x/0.04166)))/24;
+}
+
 
 void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[])
 {
@@ -1002,53 +1007,67 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
 
     /* ncw_put_att_double(ncid, NC_GLOBAL, "DA_JULDAY", 1, &obs->da_date); */
    
-    // Obtain unique dates
+    // Obtain unique hours and in the whole set
     int nsurvey;
     double* survey_time;
     int unique;
+    int* obs_in_survey;
+    observation* z;
+    double* odate;
+    double odate_clip = 0.;
+
     survey_time = malloc(obs->nobs * sizeof(double));
-    memset(survey_time,0,sizeof(double));
-    //store unique items
-    nsurvey=0;
+    obs_in_survey = malloc(obs->nobs * sizeof(int));
     for (i = 0; i < obs->nobs; ++i) {
-      observation* z = &obs->data[i];
+      survey_time[i] = 0.;
+      obs_in_survey[i] = 0;
+    }
+    
+    z = &obs->data[0];
+    odate = &z->date;
+    survey_time[0] = to_hour_slot(* odate);
+    obs_in_survey[0] = 1;
+    
+    nsurvey=1;
+    for (i = 1; i < obs->nobs; ++i) {
       unique = 1;
-      if (i == 0) {
-        ++nsurvey;
-        survey_time[i] = z->date;
-      } else {
-        for (ii = 0; ii < nsurvey; ++ii) {
-          if (z->date==survey_time[ii]){
-            unique = 0;
-            break;
-          }
-        }
-        if (unique==1) {
-          survey_time[nsurvey] = z->date;
+      z = &obs->data[i];
+      odate = &z->date;
+      odate_clip = to_hour_slot(* odate);
+      for (ii = 0; ii < nsurvey; ++ii) {
+        if (odate_clip==survey_time[ii]) {
+          ++obs_in_survey[ii];
+          unique = 0;
+          break;
         }
       }
+      if (unique==1) {
+        survey_time[nsurvey] = to_hour_slot(odate_clip);
+        ++nsurvey;
+      }
     }
+
     int *tmp;
     tmp = realloc(survey_time,nsurvey*sizeof(double));
+    tmp = realloc(obs_in_survey,nsurvey*sizeof(int));
     free(tmp);
-   
+  
     //Obtain number of observations in each unique day
-    int* obs_in_survey;
-    obs_in_survey = malloc(nsurvey*sizeof(int));
-    memset(obs_in_survey,0,sizeof(int));
-    for (i = 0; i < obs->nobs; ++i) {
-      observation* z = &obs->data[i];
-      for (ii =0; ii < nsurvey; ++ii) {
-        if (z->date == survey_time[ii]) {
-          ++obs_in_survey[ii];
-        }
-      }
-    }
+    /* int* obs_in_survey; */
+    /* obs_in_survey = malloc(nsurvey*sizeof(int)); */
+    /* memset(obs_in_survey,0,sizeof(int)); */
+    /* for (i = 0; i < obs->nobs; ++i) { */
+    /*   observation* z = &obs->data[i]; */
+    /*   for (ii =0; ii < nsurvey; ++ii) { */
+    /*     if (z->date == survey_time[ii]) { */
+    /*       ++obs_in_survey[ii]; */
+    /*     } */
+    /*   } */
+    /* } */
 
     //Obtain the minimum of variance of superobs per state variable
     //as a estimate of the lowest variance of each obs type
      //Obtain number of observations in each unique day
-
 
 
     int dimid_survey[1];
