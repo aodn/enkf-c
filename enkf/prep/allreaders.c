@@ -77,7 +77,9 @@ obsreader_entry allreaders[] = {
     {"ALL", "xyz_scattered", reader_xyz_scattered},
     {"ALL", "xyz_gridded", reader_xyz_gridded},
     {"ALL", "xyh_gridded", reader_xyh_gridded},
-    {"ALL", "xy_gridded_imos_hfradar", reader_xy_gridded_imos_hfradar}
+    {"ALL", "xy_gridded_imos_hfradar", reader_xy_gridded_imos_hfradar},
+    {"ALL", "xyz_scattered_xbt", reader_xyz_scattered_xbt}
+
 };
 
 /**
