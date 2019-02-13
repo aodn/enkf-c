@@ -221,27 +221,26 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
              */
             ;
         /* UV, rotation, requirements */
-        else if (strcasecmp(meta->pars[i].name, "ROTATION") == 0) {
+        else if (strcasecmp(meta->pars[i].name, "ROTATION") == 0) 
             rotation_flag = meta->pars[i].value;
-            if (strcasecmp(meta->pars[i].name, "U_VARNAME") == 0)
-            u_varname = meta->pars[i].value;
-            else if (strcasecmp(meta->pars[i].name, "V_VARNAME") == 0)
-            v_varname = meta->pars[i].value;
-            else if (strcasecmp(meta->pars[i].name, "U_STD") == 0)
-            u_stdvarname = meta->pars[i].value;
-            else if (strcasecmp(meta->pars[i].name, "V_STD") == 0)
-            v_stdvarname = meta->pars[i].value;
-            else if (strcasecmp(meta->pars[i].name, "U_VARSHIFT") == 0) {
-                if (!str2float(meta->pars[i].value, &u_varshift))
-                    enkf_quit("%s: can not convert U_VARSHIFT = \"%s\" to float\n", meta->prmfname, meta->pars[i].value);
-                else
-                    enkf_printf("        U_VARSHIFT = %s\n", meta->pars[i].value);
-            } else if (strcasecmp(meta->pars[i].name, "V_VARSHIFT") == 0) {
-                if (!str2float(meta->pars[i].value, &v_varshift))
-                    enkf_quit("%s: can not convert V_VARSHIFT = \"%s\" to float\n", meta->prmfname, meta->pars[i].value);
-                else
-                    enkf_printf("        V_VARSHIFT = %s\n", meta->pars[i].value);
-            }
+        else if (strcasecmp(meta->pars[i].name, "U_VARNAME") == 0)
+        u_varname = meta->pars[i].value;
+        else if (strcasecmp(meta->pars[i].name, "V_VARNAME") == 0)
+        v_varname = meta->pars[i].value;
+        else if (strcasecmp(meta->pars[i].name, "U_STD") == 0)
+        u_stdvarname = meta->pars[i].value;
+        else if (strcasecmp(meta->pars[i].name, "V_STD") == 0)
+        v_stdvarname = meta->pars[i].value;
+        else if (strcasecmp(meta->pars[i].name, "U_VARSHIFT") == 0) {
+            if (!str2float(meta->pars[i].value, &u_varshift))
+                enkf_quit("%s: can not convert U_VARSHIFT = \"%s\" to float\n", meta->prmfname, meta->pars[i].value);
+            else
+                enkf_printf("        U_VARSHIFT = %s\n", meta->pars[i].value);
+        } else if (strcasecmp(meta->pars[i].name, "V_VARSHIFT") == 0) {
+            if (!str2float(meta->pars[i].value, &v_varshift))
+                enkf_quit("%s: can not convert V_VARSHIFT = \"%s\" to float\n", meta->prmfname, meta->pars[i].value);
+            else
+                enkf_printf("        V_VARSHIFT = %s\n", meta->pars[i].value);
         } else
             enkf_quit("unknown PARAMETER \"%s\"\n", meta->pars[i].name);
     }
