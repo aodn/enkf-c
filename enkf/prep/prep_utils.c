@@ -138,12 +138,12 @@ void obs_add(observations* obs, model* m, obsmeta* meta)
 
             if (o->status != STATUS_OK)
                 continue;
-            if (o->date - obs->da_date < ot->windowmin + DT_EPS) {
+            if ((o->date - obs->da_date < ot->windowmin + DT_EPS) && (o->date != obs->da_date)) {
                 o->status = STATUS_OUTSIDEOBSWINDOW;
                 noutow++;
                 continue;
             }
-            if (o->date - obs->da_date > ot->windowmax - DT_EPS) {
+            if ((o->date - obs->da_date > ot->windowmax - DT_EPS) && (o->date != obs->da_date+ot->windowmax)) {
                 o->status = STATUS_OUTSIDEOBSWINDOW;
                 noutow++;
                 continue;
