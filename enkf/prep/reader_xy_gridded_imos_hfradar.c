@@ -567,7 +567,7 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
         o->batch = 0;
         if (iscurv == 0) {
             o->lon = lon[i % ni];
-            o->lat = lat[i / ni];
+            o->lat = lat[i % nj];
         } else {
             o->lon = lon[i];
             o->lat = lat[i];
