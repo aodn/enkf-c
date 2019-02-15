@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- * File:        reader_xyz_scattered_xbt.c        
+ * File:        reader_z_xbt_profile.c        
  *
  * Created:     06/02/2019
  *
@@ -69,7 +69,7 @@
 
 /**
  */
-void reader_xyz_scattered_xbt(char* fname, int fid, obsmeta* meta, grid* g, observations* obs)
+void reader_z_xbt_profile(char* fname, int fid, obsmeta* meta, grid* g, observations* obs)
 {
     char* varname = NULL;
     char* lonname = NULL;
@@ -161,7 +161,7 @@ void reader_xyz_scattered_xbt(char* fname, int fid, obsmeta* meta, grid* g, obse
     get_qcflags(meta, &nqcflags, &qcflagname, &qcflagvals);
 
     if (varname == NULL)
-        enkf_quit("reader_xyz_scattered_xbt(): %s VARNAME not specified", fname);
+        enkf_quit("reader_z_xbt_profile(): %s VARNAME not specified", fname);
     else
         enkf_printf("        VARNAME = %s\n", varname);
 
@@ -176,7 +176,7 @@ void reader_xyz_scattered_xbt(char* fname, int fid, obsmeta* meta, grid* g, obse
         ncw_inq_varid(ncid, lonname, &varid_lon);
         ncw_check_vardims(ncid, varid_lon, ndim_in_gcoord, &singleton);
     } else
-        enkf_quit("reader_xyz_scattered_xbt(): %s: could not find longitude variable", fname);
+        enkf_quit("reader_z_xbt_profile(): %s: could not find longitude variable", fname);
 
     latname = get_latname(ncid, latname);
     if (latname != NULL) {
@@ -184,7 +184,7 @@ void reader_xyz_scattered_xbt(char* fname, int fid, obsmeta* meta, grid* g, obse
         ncw_inq_varid(ncid, latname, &varid_lat);
         ncw_check_vardims(ncid, varid_lat, ndim_in_gcoord, &singleton);
     } else
-        enkf_quit("reader_xyz_scattered_xbt(): %s: could not find latitude variable", fname);
+        enkf_quit("reader_z_xbt_profile(): %s: could not find latitude variable", fname);
 
     zname = get_zname(ncid, zname);
     if (zname != NULL) {
@@ -312,7 +312,7 @@ void reader_xyz_scattered_xbt(char* fname, int fid, obsmeta* meta, grid* g, obse
         enkf_printf("        TIMENAME = %s\n", timename);
         ncw_inq_varid(ncid, timename, &varid_time);
     } else {
-        enkf_printf("        reader_xyz_scattered_xbt(): %s: no TIME variable\n", fname);
+        enkf_printf("        reader_z_xbt_profile(): %s: no TIME variable\n", fname);
         have_time = 0;
     }
 
