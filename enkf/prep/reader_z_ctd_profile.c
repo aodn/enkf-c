@@ -449,8 +449,18 @@ void reader_z_ctd_profile(char *fname, int fid, obsmeta *meta, grid *g,
         (have_time && !singletime &&
          (time[i] == time_fill_value || isnan(time[i]))))
       continue;
-    for (ii = 0; ii < nqcflags; ++ii)
-      if (!(qcflag[ii][i] | qcflagvals[ii]))
+
+    int invalid_qc = 1;
+    char bitflag;
+    for (ii = 0; ii < nqcflags; ++ii) {
+        bitflag = 0;
+        bitflag |= 1 << qcflag[ii][i];
+        if ((bitflag & qcflagvals[ii])) {
+            invalid_qc = 0;
+            break;
+        }
+    }
+    if (invalid_qc)
         continue;
 
     nobs_read++;
