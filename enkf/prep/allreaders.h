@@ -47,6 +47,7 @@ void reader_cmems_standard(char* fname, int fid, obsmeta* meta, grid* g, observa
 void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g, observations* obs);
 void reader_z_xbt_profile(char* fname, int fid, obsmeta* meta, grid* g, observations* obs);
 void reader_z_ctd_profile(char* fname, int fid, obsmeta* meta, grid* g, observations* obs);
+void reader_z_adcp_temp(char* fname, int fid, obsmeta* meta, grid* g, observations* obs);
 void reader_xy_gridded_multirecord(char* fname, int fid, obsmeta* meta, grid* g, observations* obs);
 
 #define _ALLREADERS_H
