@@ -1012,8 +1012,6 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
     double* survey_time;
     int unique;
     int* obs_in_survey;
-    observation* z;
-    double* odate;
     double odate_clip = 0.;
 
     survey_time = malloc(obs->nobs * sizeof(double));
@@ -1022,47 +1020,38 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
     for (i = 0; i < obs->nobs; ++i) {
       obs_in_survey[i] = 0;
     }
-    
+   
     nsurvey=0;
     for (i = 0; i < obs->nobs; ++i) {
       unique = 1;
-      z = &obs->data[i];
-      odate = &z->date;
-      odate_clip = to_hour_slot(* odate);
-      for (ii = 0; ii < nsurvey; ++ii) {
-        if (odate_clip==survey_time[ii]) {
-          ++obs_in_survey[ii];
-          unique = 0;
-          break;
+      odate_clip = to_hour_slot(obs->data[i].date);
+
+      if (nsurvey == 0) {
+        survey_time[nsurvey] = odate_clip;
+        ++obs_in_survey[nsurvey];
+        ++nsurvey;
+        continue;
+      } 
+      else {
+        for (ii = 0; ii < nsurvey; ++ii) {
+          if (odate_clip==survey_time[ii]) {
+            ++obs_in_survey[ii];
+            unique = 0;
+            break;
+          }
+        }
+        if (unique==1) {
+          survey_time[nsurvey] = odate_clip;
+          ++nsurvey;
         }
       }
-      if (unique==1) {
-        survey_time[nsurvey] = to_hour_slot(odate_clip);
-        ++nsurvey;
-      }
     }
-
-    if (nsurvey == 0)
-      ++nsurvey;
 
     int *tmp;
     tmp = realloc(survey_time,nsurvey*sizeof(double));
     tmp = realloc(obs_in_survey,nsurvey*sizeof(int));
     free(tmp);
   
-    //Obtain number of observations in each unique day
-    /* int* obs_in_survey; */
-    /* obs_in_survey = malloc(nsurvey*sizeof(int)); */
-    /* memset(obs_in_survey,0,sizeof(int)); */
-    /* for (i = 0; i < obs->nobs; ++i) { */
-    /*   observation* z = &obs->data[i]; */
-    /*   for (ii =0; ii < nsurvey; ++ii) { */
-    /*     if (z->date == survey_time[ii]) { */
-    /*       ++obs_in_survey[ii]; */
-    /*     } */
-    /*   } */
-    /* } */
-
     //Obtain the minimum of variance of superobs per state variable
     //as a estimate of the lowest variance of each obs type
      //Obtain number of observations in each unique day
