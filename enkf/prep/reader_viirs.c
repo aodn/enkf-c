@@ -220,7 +220,7 @@ void reader_viirs_standard(char* fname, int fid, obsmeta* meta, grid* g, observa
         }
         if (ndim == 2) {
             o->lon = lon[i % ni];
-            o->lat = lat[i / ni];
+            o->lat = lat[i % nj];
         } else {
             o->lon = (double) lon[i] * lon_scale_factor + lon_add_offset;
             o->lat = (double) lat[i] * lat_scale_factor + lat_add_offset;

@@ -6,8 +6,10 @@
  *
  * Author:      Pavel Sakov
  *              Bureau of Meteorology
+ *              Hugo Oliveira
+ *              AODN
  *
- * Description: Generic reader for gridded surface observations.
+ * Description: Generic reader for gridded surface observations with multirecords.
  *                It currently assumes the following:
  *              - there is only one data record (2D field);
  *              - longitude is the inner ("fast") coordinate of the variable.
