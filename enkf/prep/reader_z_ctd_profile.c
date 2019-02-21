@@ -298,6 +298,34 @@ void reader_z_ctd_profile(char *fname, int fid, obsmeta *meta, grid *g,
       lat[0] = lat[0] * lat_scale_factor + lat_add_offset;
     }
   }
+  // PRocess a positive/negative ZNAME depth variable 
+  int move_inside_water = 1;
+  int status;
+  int is_positive;
+  char positive_info[MAXSTRLEN];
+  char *strinside;
+
+  status = nc_get_att_text(ncid, varid_z, "positive", positive_info);
+  strinside = strstr(positive_info,"down");
+
+  is_positive = ((status == 0) && (strinside != NULL));
+  if (is_positive)
+    move_inside_water = -1;
+  else {
+    float valid_min,valid_max;
+    status = nc_get_att_float(ncid, varid_z, "valid_min", &valid_min);
+    status += nc_get_att_float(ncid, varid_z, "valid_max", &valid_max);
+    if (status == 0) {
+      is_positive = ((valid_min < 0) && (valid_max > 0) &&
+                     (abs(valid_min) < abs(valid_max)));
+      if (is_positive)
+        move_inside_water = -1;
+    } else {
+      // Assumes positive measurments are in the ocean - AODN data.
+      enkf_printf("Warning: Assuming ZNAME variable is positive down.\n");
+      move_inside_water = -1;
+    }
+  }
 
   ncw_get_var_double(ncid, varid_z, z);
   if (ncw_att_exists(ncid, varid_z, "_FillValue"))
@@ -311,6 +339,10 @@ void reader_z_ctd_profile(char *fname, int fid, obsmeta *meta, grid *g,
         z[i] = z[i] * z_scale_factor + z_add_offset;
     }
   }
+  // Put data in the water
+  for (i = 0; i < nobs; ++i)
+    z[i] *= move_inside_water;
+
 
   var = malloc(nobs * sizeof(double));
   ncw_get_var_double(ncid, varid_var, var);

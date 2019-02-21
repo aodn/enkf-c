@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- * File:        reader_z_adcp_temp.c
+ * File:        reader_z_timeseries.c
  *
  * Created:     06/02/2019
  *
@@ -69,8 +69,8 @@
 
 /**
  */
-void reader_z_adcp_temp(char *fname, int fid, obsmeta *meta, grid *g,
-                              observations *obs) {
+void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
+                        observations *obs) {
   char *varname = NULL;
   char *lonname = NULL;
   char *latname = NULL;
@@ -162,7 +162,7 @@ void reader_z_adcp_temp(char *fname, int fid, obsmeta *meta, grid *g,
   get_qcflags(meta, &nqcflags, &qcflagname, &qcflagvals);
 
   if (varname == NULL)
-    enkf_quit("reader_z_adcp_temp(): %s VARNAME not specified\n", fname);
+    enkf_quit("reader_z_timeseries(): %s VARNAME not specified\n", fname);
   else
     enkf_printf("        VARNAME = %s\n", varname);
 
@@ -202,9 +202,8 @@ void reader_z_adcp_temp(char *fname, int fid, obsmeta *meta, grid *g,
         ndim_in_lon += 1;
     }
   } else
-    enkf_quit(
-        "reader_z_adcp_temp(): %s: could not find longitude variable\n",
-        fname);
+    enkf_quit("reader_z_timeseries(): %s: could not find longitude variable\n",
+              fname);
 
   latname = get_latname(ncid, latname);
   if (latname != NULL) {
@@ -218,14 +217,13 @@ void reader_z_adcp_temp(char *fname, int fid, obsmeta *meta, grid *g,
         ndim_in_lat += 1;
     }
   } else
-    enkf_quit(
-        "reader_z_adcp_temp(): %s: could not find latitude variable\n",
-        fname);
+    enkf_quit("reader_z_timeseries(): %s: could not find latitude variable\n",
+              fname);
 
 
   if (zname != NULL) {
     enkf_printf("        ZNAME = %s\n", zname);
-    int status = nc_inq_varid(ncid,zname,&varid_z);
+    int status = nc_inq_varid(ncid, zname, &varid_z);
     if (status != NC_NOERR) {
       enkf_printf("        Warning: ZNAME is missing.\n");
       ndim_in_z = 0;
@@ -241,11 +239,10 @@ void reader_z_adcp_temp(char *fname, int fid, obsmeta *meta, grid *g,
       }
       }
   } else
-    enkf_quit("reader_z_adcp_temp(): %s: could not find Z variable\n",
-              fname);
+    enkf_quit("reader_z_timeseries(): %s: could not find Z variable\n", fname);
 
   if (ndim_in_lon != ndim_in_lat)
-    enkf_quit("reader_z_adcp_temp(): %s: dimension number mismatch\n"
+    enkf_quit("reader_z_timeseries(): %s: dimension number mismatch\n"
               "between lon/lat",
               fname);
 
@@ -255,7 +252,7 @@ void reader_z_adcp_temp(char *fname, int fid, obsmeta *meta, grid *g,
     lon = malloc(sizeof(double));
     lat = malloc(sizeof(double));
   } else
-    enkf_quit("reader_z_adcp_temp(): %s: Longitude has %s and latitude "
+    enkf_quit("reader_z_timeseries(): %s: Longitude has %s and latitude "
               "has %s number of dimensions. This reader accepts only "
               "dimensionless or singleton coordinate variables.\n",
               fname, ndim_in_lon, ndim_in_lat);
@@ -272,11 +269,11 @@ void reader_z_adcp_temp(char *fname, int fid, obsmeta *meta, grid *g,
     int counter = 0;
     size_t test;
     for (i = 0; i < ndim_in_var; ++i) {
-      ncw_inq_dimlen(ncid,var_dimids[i],&test);
+      ncw_inq_dimlen(ncid, var_dimids[i], &test);
       if (test != 1)
         ++counter;
       if (counter > 1)
-        enkf_quit("reader_z_adcp_temp(): %s: Non-singleton dimension %d "
+        enkf_quit("reader_z_timeseries(): %s: Non-singleton dimension %d "
                   "in variable %s is not part of the xyz variables.\n",
                   fname, var_dimids[i], varname);
     }
@@ -312,18 +309,52 @@ void reader_z_adcp_temp(char *fname, int fid, obsmeta *meta, grid *g,
 
  
   int missing_depth;
+  int move_inside_water = 1;
+
   missing_depth = (varid_z == -1);
   if (missing_depth) {
     enkf_printf("Reading ZNAME as \"nominal_instrument_depth\"...\n");
     float instrument_depth;
-    ncw_get_att_float(ncid,NC_GLOBAL,"instrument_nominal_depth", &instrument_depth);
+    ncw_get_att_float(ncid, NC_GLOBAL, "instrument_nominal_depth",
+                      &instrument_depth);
     if (instrument_depth < 0.0)
-      enkf_quit("Global Attribute \"instrument_nominal_depth\" is negative. Aborted\n");    
-    for (i =0; i < nobs; i++) {
+      enkf_quit("Global Attribute \"instrument_nominal_depth\" is negative. "
+                "Aborted\n");    
+    else
+      instrument_depth = instrument_depth * -1;
+
+    for (i = 0; i < nobs; i++) {
       z[i] = instrument_depth;
     }
-  }
-  else {
+  } else {
+    // PRocess a positive/negative ZNAME depth variable 
+    int status;
+    int is_positive;
+    char positive_info[MAXSTRLEN];
+    char *strinside;
+
+    status = nc_get_att_text(ncid, varid_z, "positive", positive_info);
+    strinside = strstr(positive_info,"down");
+
+    is_positive = ((status == 0) && (strinside != NULL));
+    if (is_positive)
+      move_inside_water = -1;
+    else {
+      float valid_min,valid_max;
+      status = nc_get_att_float(ncid, varid_z, "valid_min", &valid_min);
+      status += nc_get_att_float(ncid, varid_z, "valid_max", &valid_max);
+      if (status == 0) {
+        is_positive = ((valid_min < 0) && (valid_max > 0) &&
+                       (abs(valid_min) < abs(valid_max)));
+        if (is_positive)
+          move_inside_water = -1;
+      } else {
+        // Assumes positive measurments are in the ocean - AODN data.
+        enkf_printf("Warning: Assuming ZNAME variable is positive down.\n");
+        move_inside_water = -1;
+      }
+    }
+
     ncw_get_var_double(ncid, varid_z, z);
     if (ncw_att_exists(ncid, varid_z, "_FillValue"))
       ncw_get_att_double(ncid, varid_z, "_FillValue", &z_fill_value);
@@ -331,12 +362,15 @@ void reader_z_adcp_temp(char *fname, int fid, obsmeta *meta, grid *g,
     if (ncw_att_exists(ncid, varid_z, "add_offset")) {
       ncw_get_att_double(ncid, varid_z, "add_offset", &z_add_offset);
       ncw_get_att_double(ncid, varid_z, "scale_factor", &z_scale_factor);
-      for (i = 0; i < nobs; ++i) {
-        if (z[i] != z_fill_value)
-          z[i] = z[i] * z_scale_factor + z_add_offset;
-      }
+      for (i = 0; i < nobs; ++i) 
+        if (z[i] != z_fill_value) 
+          z[i] = (z[i] * z_scale_factor + z_add_offset);
     }
   }
+  // Put data in the water
+  for (i = 0; i < nobs; ++i)
+    z[i] *= move_inside_water;
+
 
   var = malloc(nobs * sizeof(double));
   ncw_get_var_double(ncid, varid_var, var);
@@ -414,8 +448,7 @@ void reader_z_adcp_temp(char *fname, int fid, obsmeta *meta, grid *g,
     enkf_printf("        TIMENAME = %s\n", timename);
     ncw_inq_varid(ncid, timename, &varid_time);
   } else {
-    enkf_printf("        reader_z_adcp_temp(): %s: no TIME variable\n",
-                fname);
+    enkf_printf("        reader_z_timeseries(): %s: no TIME variable\n", fname);
     have_time = 0;
   }
 
