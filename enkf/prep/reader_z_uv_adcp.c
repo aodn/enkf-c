@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- * File:        reader_xy_gridded_hfradar.c
+ * File:        reader_z_uv_adcp.c
  *
  * Created:     08/03/2017
  *
@@ -9,15 +9,16 @@
  *              Hugo Oliveira
  *              AODN
  *
- * Description: A Generic reader for gridded surface velocity observations from HF-Radar.
+ * Description: A Generic reader for Velocities measured by ADCP from IMOS.
  *                It currently assumes the following:
  *              - There is a rotation mode set by the user.
- *              - there is only one data record (2D field);
- *              - longitude is the inner ("fast") coordinate of the variable.
+ *              - The variable can be of arbitrary dimensions as long as only two dimensions are non-singleton - TIME and DEPTH above the instrument.
  *                There are a number of parameters that must (++) or can be
  *              specified if they differ from the default value (+). Some
  *              parameters are optional (-):
  *              - VARNAME (++)
+ *              - ZNAME (-)
+ *              - HNAME (-)
  *              - TIMENAME ("time") (+)
  *              - ROTATION (True 1 | False 0)  (+)
  *                  a boolean to rotate the vectors to the current grid when reading.
@@ -31,9 +32,6 @@
  *              - V_VARSHIFT (-)
  *                 v data offset to be added to v values. same as above.
  *              -----------------------------------------------------------------
- *              - NPOINTSNAME ("npoints") (-)
- *                  number of collated points for each datum; used basically as
- *                  a data mask n = 0
  *              - LONNAME ("lon" | "longitude") (+)
  *              - LATNAME ("lat" | "latitude") (+)
  *              - STDNAME ("std") (-)
@@ -73,6 +71,10 @@
  *                supposed to contain a list of allowed flag values.
  *               HO 10/1/2018
  *                Merged new code with rotation logics.
+ *               HO 30/1/2019
+ *                Adapted from hf-radar reader.
+ *               HO 19/2/2019
+ *                Fixed general problems in the DEVL service.
  *****************************************************************************/
 
 #include <stdlib.h>
@@ -95,7 +97,7 @@
 
 /**
  */
-void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g, observations* obs)
+void reader_z_uv_adcp(char* fname, int fid, obsmeta* meta, grid* g, observations* obs)
 {
     int ksurf = grid_getsurflayerid(g);
 
@@ -113,12 +115,12 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
 
     char* lonname = NULL;
     char* latname = NULL;
-    char* npointsname = NULL;
+    char *zname = NULL;
+    char *hname = NULL;
+
     char* stdname = NULL;
     char* estdname = NULL;
     char* timename = NULL;
-    int ndim_var, ndim_xy;
-    size_t dimlen_var[3], dimlen_xy[2];
     int nqcflags = 0;
     char** qcflagname = NULL;
 
@@ -128,6 +130,8 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
     uint32_t* qcflagvals = 0;
 
     int ncid;
+    int nc;
+    int nt,nz;
     float varshift = 0.0;
 
     /* UV varshifts */
@@ -136,18 +140,33 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
 
     double mindepth = 0.0;
     char instrument[MAXSTRLEN];
+    float instrument_depth = -9999;
+    int missing_depth = 0;
 
-    int iscurv = -1;
-    size_t ni = 0, nj = 0, n = 0, n_var = 0;
+    size_t dimlen_z[NC_MAX_VAR_DIMS], dimlen_h[NC_MAX_VAR_DIMS], dimlen_var[NC_MAX_VAR_DIMS];
     int varid_lon = -1, varid_lat = -1;
     double* lon = NULL;
+    double lon_add_offset, lon_scale_factor;
+    double lon_fill_value = NAN;
     double* lat = NULL;
-    int varid_var = -1, varid_npoints = -1, varid_std = -1, varid_estd = -1, varid_time = -1;
+    double lat_add_offset, lat_scale_factor;
+    double lat_fill_value = NAN;
+    int varid_var = -1, varid_std = -1, varid_estd = -1, varid_time = -1;
+    int varid_z = -1, varid_h = -1;
+
+    
+
+    double *z = NULL;
+    double *rz = NULL;
+    double z_add_offset, z_scale_factor;
+    double *rh = NULL;
+    double h_add_offset, h_scale_factor;
+
+
     float* var = NULL;
     float var_fill_value = NAN;
     float var_add_offset = NAN, var_scale_factor = NAN;
     double var_estd = NAN;
-    short* npoints = NULL;
     float* std = NULL;
     float std_add_offset = NAN, std_scale_factor = NAN;
     float std_fill_value = NAN;
@@ -160,12 +179,13 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
 
     int have_time = 1;
     int singletime = -1;
-    float* time = NULL;
-    float time_add_offset = NAN, time_scale_factor = NAN;
-    float time_fill_value = NAN;
+    double* time = NULL;
+    double* rtime = NULL;
+    double time_add_offset = NAN, time_scale_factor = NAN;
+    double time_fill_value = NAN;
     char tunits[MAXSTRLEN];
     double tunits_multiple = NAN, tunits_offset = NAN;
-    int i, nobs_read;
+    int i, nobs, nobs_read;
 
     /* UV requirements */
     int varid_u = -1, varid_v =-1;
@@ -182,12 +202,14 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
             varname = meta->pars[i].value;
         else if (strcasecmp(meta->pars[i].name, "TIMENAME") == 0)
             timename = meta->pars[i].value;
-        else if (strcasecmp(meta->pars[i].name, "NPOINTSNAME") == 0)
-            npointsname = meta->pars[i].value;
         else if (strcasecmp(meta->pars[i].name, "LONNAME") == 0)
             lonname = meta->pars[i].value;
         else if (strcasecmp(meta->pars[i].name, "LATNAME") == 0)
             latname = meta->pars[i].value;
+        else if (strcasecmp(meta->pars[i].name, "ZNAME") == 0)
+            zname = meta->pars[i].value;
+        else if (strcasecmp(meta->pars[i].name, "HNAME") == 0)
+            hname = meta->pars[i].value;
         else if (strcasecmp(meta->pars[i].name, "STDNAME") == 0)
             stdname = meta->pars[i].value;
         else if (strcasecmp(meta->pars[i].name, "ESTDNAME") == 0)
@@ -231,7 +253,7 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
     get_qcflags(meta, &nqcflags, &qcflagname, &qcflagvals);
 
     if (varname == NULL)
-        enkf_quit("reader_xy_gridded_hfradar(): %s: VARNAME not specified", fname);
+        enkf_quit("reader_z_uv_adcp(): %s: VARNAME not specified", fname);
     else
         enkf_printf("        VARNAME = %s\n", varname);
 
@@ -245,97 +267,305 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
             need_rotation = bool_rotation_flag == 1;
             grid_getdims(g, &grid_ni, &grid_nj, NULL);
             if (need_rotation == 1 && grid_angle == NULL)
-                enkf_quit("reader_xy_gridded_hfradar(): %s cannot rotate vectors without ANGLE parameter defined within grid prm file",fname);
+                enkf_quit("reader_z_uv_adcp(): %s cannot rotate vectors without ANGLE parameter defined within grid prm file",fname);
             else
                 enkf_printf("\t#Rotation of vectors enabled\n");
         }
         else
-            enkf_quit("reader_xy_gridded_hfradar(): %s invalid ROTATION parameter. Need to be a boolean digit");
+            enkf_quit("reader_z_uv_adcp(): %s invalid ROTATION parameter. Need to be a boolean digit");
     }
 
     ncw_open(fname, NC_NOWRITE, &ncid);
-    ncw_inq_varid(ncid, varname, &varid_var);
-    ncw_inq_vardims(ncid, varid_var, 3, &ndim_var, dimlen_var);
-    if (ndim_var == 3) {
-        if (!ncw_var_hasunlimdim(ncid, varid_var))
-            enkf_quit("reader_xy_gridded_hfradar(): %s: %s: depends on 3 dimensions, but has no unlimited dimension", fname, varname);
-        if (dimlen_var[0] != 1)
-            enkf_quit("reader_xy_gridded_hfradar(): %s: %s: %d records (currently only one is allowed)", fname, varname, dimlen_var[0]);
-        n_var = dimlen_var[1] * dimlen_var[2];
-    } else if (ndim_var == 2) {
-        if (ncw_var_hasunlimdim(ncid, varid_var))
-            enkf_quit("reader_xy_gridded_hfradar(): %s: %s: not enough spatial dimensions (must be 2)", fname, varname);
-        n_var = dimlen_var[0] * dimlen_var[1];
-    } else if (ndim_var != 2)
-        enkf_quit("reader_xy_gridded_hfradar(): %s: %s: %d dimensions (must be 2 or 3 with only one record)", fname, varname, ndim_var);
+    // Rules here are: Vel variables are two dimensional but can ignore singleton dimensions
+    //
+    //
+    //
+    int ndim_in_lon = 0;
+    int ndim_in_lat = 0;
+    int ndim_in_z = 0;
+    int ndim_in_h = 0;
+    int ndim_in_var = 0;
+
+    int lon_dimids[NC_MAX_VAR_DIMS];
+    int lat_dimids[NC_MAX_VAR_DIMS];
+    int z_dimids[NC_MAX_VAR_DIMS];
+    int h_dimids[NC_MAX_VAR_DIMS];
+    int var_dimids[NC_MAX_VAR_DIMS];
+
+    for (i = 0; i < NC_MAX_VAR_DIMS; ++i) {
+        lon_dimids[i] = -1;
+        lat_dimids[i] = -1;
+        z_dimids[i] = -1;
+        h_dimids[i] = -1;
+        var_dimids[i] = -1;
+    }
 
     lonname = get_lonname(ncid, lonname);
     if (lonname != NULL) {
         enkf_printf("        LONNAME = %s\n", lonname);
         ncw_inq_varid(ncid, lonname, &varid_lon);
-    } else {
-        if (ncw_var_exists(ncid, "lon"))
-            ncw_inq_varid(ncid, "lon", &varid_lon);
-        else if (ncw_var_exists(ncid, "longitude"))
-            ncw_inq_varid(ncid, "longitude", &varid_lon);
-        else if (ncw_var_exists(ncid, "LONGITUDE"))
-            ncw_inq_varid(ncid, "LONGITUDE", &varid_lon);
-        else
-            enkf_quit("reader_xy_gridded_hfradar(): %s: could not find longitude variable", fname);
-    }
-
-    ncw_inq_vardims(ncid, varid_lon, 2, &ndim_xy, dimlen_xy);
-    if (ndim_xy == 1) {
-        iscurv = 0;
-        ni = dimlen_xy[0];
-    } else if (ndim_xy == 2) {
-        iscurv = 1;
-        ni = dimlen_xy[1];
-        nj = dimlen_xy[0];
+        ncw_inq_vardimid(ncid, varid_lon, lon_dimids);
+        for (i = 0; i < NC_MAX_VAR_DIMS; ++i) {
+            if (lon_dimids[i] == -1)
+                break;
+            else
+                ndim_in_lon += 1;
+        }
     } else
-        enkf_quit("reader_xy_gridded_hfradar(): %s: coordinate variable \"%s\" has neither 1 or 2 dimensions", fname, lonname);
+        enkf_quit("reader_z_uv_adcp(): %s: could not find longitude variable\n",
+                fname);
 
     latname = get_latname(ncid, latname);
     if (latname != NULL) {
         enkf_printf("        LATNAME = %s\n", latname);
         ncw_inq_varid(ncid, latname, &varid_lat);
-    } else {
-        if (ncw_var_exists(ncid, "lat"))
-            ncw_inq_varid(ncid, "lat", &varid_lat);
-        else if (ncw_var_exists(ncid, "latitude"))
-            ncw_inq_varid(ncid, "latitude", &varid_lat);
-        else if (ncw_var_exists(ncid, "LATITUDE"))
-            ncw_inq_varid(ncid, "LATITUDE", &varid_lat);
-        else
-            enkf_quit("reader_xy_gridded_hfradar(): %s: could not find latitude variable", fname);
-    }
-    if (ndim_xy == 1)
-        ncw_inq_vardims(ncid, varid_lat, 1, &ndim_xy, &nj);
-
-    if (iscurv == 0) {
-        ncw_check_varndims(ncid, varid_lat, 1);
-        ncw_inq_vardims(ncid, varid_lat, 1, NULL, &nj);
+        ncw_inq_vardimid(ncid, varid_lat, lat_dimids);
+        for (i = 0; i < NC_MAX_VAR_DIMS; ++i) {
+            if (lat_dimids[i] == -1)
+                break;
+            else
+                ndim_in_lat += 1;
+        }
     } else
-        ncw_check_vardims(ncid, varid_lat, 2, dimlen_xy);
+        enkf_quit("reader_z_uv_adcp(): %s: could not find latitude variable\n",
+                fname);
 
-    enkf_printf("        (ni, nj) = (%u, %u)\n", ni, nj);
-    n = ni * nj;
-    if (n != n_var)
-        enkf_quit("reader_xy_gridded_hfradar(): %s: dimensions of variable \"%s\" do not match coordinate dimensions", fname, varname);
-    if (dimlen_var[ndim_var - 1] != ni)
-        enkf_quit("reader_xy_gridded_hfradar(): %s: %s: longitude must be the inner coordinate", fname, varname);
-
-    if (iscurv == 0) {
-        lon = malloc(ni * sizeof(double));
-        lat = malloc(nj * sizeof(double));
-    } else {
-        lon = malloc(n * sizeof(double));
-        lat = malloc(n * sizeof(double));
+    if (zname != NULL) {
+        enkf_printf("        ZNAME = %s\n", zname);
+        int status = nc_inq_varid(ncid, zname, &varid_z);
+        if (status != NC_NOERR) {
+          enkf_printf("        Warning: ZNAME is missing.\n");
+          enkf_printf("        reading ZNAME as \"instrument_nominal_depth\"...\n");
+          ncw_get_att_float(ncid, NC_GLOBAL, "instrument_nominal_depth",
+                  &instrument_depth);
+          if (instrument_depth < 0.0)
+              enkf_printf("        WARNING: Global Attribute "
+                      "\"instrument_nominal_depth\" is negative\n");
+          else
+              instrument_depth = instrument_depth * -1;
+          ndim_in_z = 1;
+          missing_depth = 1;
+        }
+        else {
+            zname = get_zname(ncid, zname);
+            ncw_inq_varid(ncid, zname, &varid_z);
+            ncw_inq_vardimid(ncid, varid_z, z_dimids);
+        }
+    } else 
+        enkf_quit("Could not discover ZNAME.\n");
+    for (i = 0; i < NC_MAX_VAR_DIMS; ++i) {
+        if (z_dimids[i] == -1)
+            break;
+        else
+            ndim_in_z += 1;
     }
-    ncw_get_var_double(ncid, varid_lon, lon);
-    ncw_get_var_double(ncid, varid_lat, lat);
 
-    var = malloc(n * sizeof(float));
+
+    hname = get_hname(ncid, hname);
+    if (hname != NULL) {
+        enkf_printf("        HNAME = %s\n", hname);
+        ncw_inq_varid(ncid, hname, &varid_h);
+        ncw_inq_vardimid(ncid, varid_h, h_dimids);
+    } 
+    else 
+        enkf_quit("Could not discover HNAME.\n");
+    for (i = 0; i < NC_MAX_VAR_DIMS; ++i) {
+        if (h_dimids[i] == -1)
+            break;
+        else
+            ndim_in_h += 1;
+    }
+
+    ncw_inq_varid(ncid, varname, &varid_var);
+    ncw_inq_vardimid(ncid, varid_var, var_dimids);
+    for (i = 0; i < NC_MAX_VAR_DIMS; ++i) {
+        if (var_dimids[i] == -1)
+            break;
+        else
+            ndim_in_var += 1;
+    }
+    nobs = 1;
+    ncw_inq_vardims(ncid, varid_var, ndim_in_var, NULL, dimlen_var);
+    for (i = 0; i < ndim_in_var; ++i) {
+        if (dimlen_var[i] < 0)
+            break;
+        else
+            nobs *= dimlen_var[i];
+    }
+    if (nobs == 1)
+        enkf_quit("reader_z_uv_adcp(): %s: No observations\n");
+
+
+    // End of dimension gathering
+
+    int gcoord_mismatch = ndim_in_lon != ndim_in_lat;
+    if (gcoord_mismatch)
+        enkf_quit("reader_z_uv_adcp(): %s: dimension number mismatch between lon/lat",
+                fname);
+
+    int non_dim_gcoord = (ndim_in_lon == 0 && ndim_in_lat == 0);
+    int singleton_dim_gcoord = (ndim_in_lon == 1 && ndim_in_lat == 1);
+    int gcoord_is_singleton = (non_dim_gcoord || singleton_dim_gcoord);
+    if (gcoord_is_singleton) {
+        lon = malloc(sizeof(double));
+        lat = malloc(sizeof(double));
+    } else
+        enkf_quit("reader_z_uv_adcp(): %s: Longitude has %s and latitude "
+                "has %s number of dimensions. This reader accepts only "
+                "dimensionless or singleton coordinate variables.\n",
+                fname, ndim_in_lon, ndim_in_lat);
+
+    ncw_get_var_double(ncid, varid_lon, lon);
+    if (ncw_att_exists(ncid, varid_lon, "_FillValue"))
+        ncw_get_att_double(ncid, varid_lon, "_FillValue", &lon_fill_value);
+
+    if (lon[0] != lon_fill_value) {
+        if (ncw_att_exists(ncid, varid_lon, "add_offset")) {
+            ncw_get_att_double(ncid, varid_lon, "add_offset", &lon_add_offset);
+            ncw_get_att_double(ncid, varid_lon, "scale_factor", &lon_scale_factor);
+            lon[0] = lon[0] * lon_scale_factor + lon_add_offset;
+        }
+    }
+
+    ncw_get_var_double(ncid, varid_lat, lat);
+    if (ncw_att_exists(ncid, varid_lat, "_FillValue"))
+        ncw_get_att_double(ncid, varid_lat, "_FillValue", &lat_fill_value);
+
+    if (lat[0] != lat_fill_value) {
+        if (ncw_att_exists(ncid, varid_lat, "add_offset")) {
+            ncw_get_att_double(ncid, varid_lat, "add_offset", &lat_add_offset);
+            ncw_get_att_double(ncid, varid_lat, "scale_factor", &lat_scale_factor);
+            lat[0] = lat[0] * lat_scale_factor + lat_add_offset;
+        }
+    }
+
+    int invalid_zh_dims = ((ndim_in_z != 1) || (ndim_in_h != 1));
+    if (invalid_zh_dims) {
+        if (ndim_in_z > 1) {
+            int counter = 0;
+            for (i =0; i < ndim_in_z ; ++i) {
+                if (dimlen_z[i] > 1)
+                    ++counter;
+                if (counter > 1)
+
+                    enkf_quit("reader_z_uv_adcp(): %s: Variable %s got [%d] dimensions with more than 1 non-singleton dimension",fname, zname, ndim_in_z);
+            }
+        }
+        if (ndim_in_h > 1) {
+            int counter = 0;
+            for (i =0; i < ndim_in_h ; ++i) {
+                if (dimlen_h[i] > 1)
+                    ++counter;
+                if (counter > 1)
+                    enkf_quit("reader_z_uv_adcp(): %s: Variable %s got [%d] dimensions with more than 1 non-singleton dimension",fname, hname, ndim_in_h);
+            }
+        }
+    }
+
+
+    if (!missing_depth)
+        ncw_inq_vardims(ncid, varid_z, NC_MAX_VAR_DIMS, NULL, dimlen_z);
+    else {
+        enkf_printf("        WARNING: assuming first variable dimension is along Z.\n");
+        dimlen_z[0] = dimlen_var[0] ;
+    }
+
+
+
+    ncw_inq_vardims(ncid, varid_h, NC_MAX_VAR_DIMS, NULL, dimlen_h);
+    ncw_inq_vardims(ncid, varid_var, NC_MAX_VAR_DIMS, NULL, dimlen_var);
+
+    int construct_z = dimlen_z[0] != dimlen_h[0];
+    if (construct_z) {
+        int invalid_h_coord = dimlen_h[0] > dimlen_z[0];
+        if (invalid_h_coord)
+            enkf_quit("reader_z_uv_adcp(): %s: Invalid Z/H sizes. %s[%d] > %s[%d]",fname, hname, ndim_in_h, zname, ndim_in_z);
+
+        int move_inside_water = 1;
+        rz = malloc(dimlen_z[0]*sizeof(double));
+        if (!missing_depth) {
+            int status;
+            int is_positive;
+            char positive_info[MAXSTRLEN];
+            char *strinside;
+
+            status = nc_get_att_text(ncid, varid_z, "positive", positive_info);
+            strinside = strstr(positive_info, "down");
+            is_positive = ((status == 0) && (strinside != NULL));
+            if (is_positive)
+                move_inside_water = -1;
+            else {
+                float valid_min,valid_max;
+                status = nc_get_att_float(ncid, varid_z, "valid_min", &valid_min);
+                status += nc_get_att_float(ncid, varid_z, "valid_max", &valid_max);
+                if (status == 0) {
+                    is_positive = ((valid_min < 0) && (valid_max > 0) &&
+                            (abs(valid_min) < abs(valid_max)));
+                    if (is_positive)
+                        move_inside_water = -1;
+                } else {
+                    // Assumes positive measurments are in the ocean - AODN data.
+                    enkf_printf("         Warning: Assuming ZNAME variable is positive down.\n");
+                    move_inside_water = -1;
+                }
+            }
+            ncw_get_var_double(ncid, varid_z, rz);
+        } else
+            for (i = 0; i < dimlen_z[0]; ++i) 
+                rz[i] = instrument_depth;
+
+
+
+        rh = malloc(dimlen_h[0]*sizeof(double));
+        ncw_get_var_double(ncid, varid_h, rh); 
+
+        int z_transform = 0;
+        if (ncw_att_exists(ncid, varid_z, "add_offset")) {
+            ncw_get_att_double(ncid, varid_z, "add_offset", &z_add_offset);
+            ncw_get_att_double(ncid, varid_z, "scale_factor", &z_scale_factor);
+            z_transform = 1;
+        }
+
+        int h_transform = 0;
+        if (ncw_att_exists(ncid, varid_h, "add_offset")) {
+            ncw_get_att_double(ncid, varid_h, "add_offset", &h_add_offset);
+            ncw_get_att_double(ncid, varid_h, "scale_factor", &h_scale_factor);
+            h_transform = 1;
+        }
+
+        double zt,ht;
+        int j;
+        nc = 0;
+        z = malloc(nobs * sizeof(double));
+        for (i = 0; i < dimlen_z[0]; ++i) {
+            for (j = 0; j < dimlen_h[0]; ++j) {
+                if (z_transform)
+                    zt = rz[i]*z_scale_factor + z_add_offset;
+                else
+                    zt = rz[i];
+
+                if (h_transform)
+                    ht = rh[j]*h_scale_factor + h_add_offset;
+                else
+                    ht = rh[j];
+
+                z[nc] = zt*move_inside_water + ht;
+                ++nc;
+            }
+        }
+        int valid_obs = (nc == nobs);
+        if (valid_obs) {
+            nt = dimlen_z[0];
+            nz = dimlen_h[0];
+        }
+        else
+            enkf_quit("reader_z_uv_adcp(): %s: NOBS mismatch.",fname);
+    } else 
+        enkf_quit("reader_z_uv_adcp(): %s: Could not defined a Z/H coordinate. %s[%d], %s[%d], %s[%d] are not valid triplet.",fname, varname, ndim_in_var, zname, ndim_in_z, hname, ndim_in_h);
+
+
+    // postpone scale/offset conversions to the loop
+    var = malloc(nobs * sizeof(float));
     ncw_get_var_float(ncid, varid_var, var);
     if (ncw_att_exists(ncid, varid_var, "add_offset")) {
         ncw_get_att_float(ncid, varid_var, "add_offset", &var_add_offset);
@@ -344,21 +574,12 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
     if (ncw_att_exists(ncid, varid_var, "_FillValue"))
         ncw_get_att_float(ncid, varid_var, "_FillValue", &var_fill_value);
 
-    if (npointsname != NULL)
-        ncw_inq_varid(ncid, npointsname, &varid_npoints);
-    else if (ncw_var_exists(ncid, "npoints"))
-        ncw_inq_varid(ncid, "npoints", &varid_npoints);
-    if (varid_npoints >= 0) {
-        npoints = malloc(n * sizeof(short));
-        ncw_get_var_short(ncid, varid_npoints, npoints);
-    }
-
     if (stdname != NULL)
         ncw_inq_varid(ncid, stdname, &varid_std);
     else if (ncw_var_exists(ncid, "std"))
         ncw_inq_varid(ncid, "std", &varid_std);
     if (varid_std >= 0) {
-        std = malloc(n * sizeof(float));
+        std = malloc(nobs * sizeof(float));
         ncw_get_var_float(ncid, varid_std, std);
         if (ncw_att_exists(ncid, varid_std, "_FillValue"))
             ncw_get_att_float(ncid, varid_std, "_FillValue", &std_fill_value);
@@ -373,7 +594,7 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
     else if (ncw_var_exists(ncid, "error_std"))
         ncw_inq_varid(ncid, "error_std", &varid_estd);
     if (varid_estd >= 0) {
-        estd = malloc(n * sizeof(float));
+        estd = malloc(nobs * sizeof(float));
         ncw_get_var_float(ncid, varid_estd, estd);
         if (ncw_att_exists(ncid, varid_estd, "_FillValue"))
             ncw_get_att_float(ncid, varid_estd, "_FillValue", &estd_fill_value);
@@ -391,7 +612,7 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
 
     if (nqcflags > 0) {
         int varid = -1;
-        qcflag = alloc2d(nqcflags, n, sizeof(int));
+        qcflag = alloc2d(nqcflags, nobs, sizeof(int));
         for (i = 0; i < nqcflags; ++i) {
                 ncw_inq_varid(ncid, qcflagname[i], &varid);
                 /* Change Calling all qcflagvals as unsigned integers can be a problem.
@@ -406,8 +627,7 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
         enkf_printf("        TIMENAME = %s\n", timename);
         ncw_inq_varid(ncid, timename, &varid_time);
     } else {
-        enkf_printf("        reader_xy_gridded_hfradar(): %s: no TIME variable\n", fname);
-        have_time = 0;
+        enkf_quit("reader_z_uv_adcp(): %s: no TIME variable\n", fname);
     }
 
     if (have_time) {
@@ -426,25 +646,34 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
 
         if (timelen == 1) {
             singletime = 1;
-            time = malloc(sizeof(float));
+            time = malloc(sizeof(double));
         } else {
             singletime = 0;
-            assert(timelen == n);
-            time = malloc(n * sizeof(float));
+            assert(timelen == nt);
+            time = malloc(nobs * sizeof(double));
+            rtime = malloc(nt * sizeof(double));
         }
 
-        ncw_get_var_float(ncid, varid_time, time);
+        ncw_get_var_double(ncid, varid_time, rtime);
         if (ncw_att_exists(ncid, varid_time, "_FillValue"))
-            ncw_get_att_float(ncid, varid_time, "_FillValue", &time_fill_value);
+            ncw_get_att_double(ncid, varid_time, "_FillValue", &time_fill_value);
         if (ncw_att_exists(ncid, varid_time, "add_offset")) {
-            ncw_get_att_float(ncid, varid_time, "add_offset", &time_add_offset);
-            ncw_get_att_float(ncid, varid_time, "scale_factor", &time_scale_factor);
+            ncw_get_att_double(ncid, varid_time, "add_offset", &time_add_offset);
+            ncw_get_att_double(ncid, varid_time, "scale_factor", &time_scale_factor);
         }
         ncw_get_att_text(ncid, varid_time, "units", tunits);
         tunits_convert(tunits, &tunits_multiple, &tunits_offset);
+        int loc=-1;
+        int j;
+        for (i = 0 ; i < nt; ++i) {
+            for (j = 0; j < nz; ++j) {
+                loc += 1;
+                time[loc] = rtime[i];
+            }
+        }
     }
 
-    /* Pre-load U/V if rotation is required*/
+    /* Perform loads required for rotation */
     if (need_rotation == 1) {
 
         if (u_varname != NULL)
@@ -453,9 +682,9 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
             ncw_inq_varid(ncid, "UCUR", &varid_u);
             u_varname = "UCUR";
         } else
-            enkf_quit("reader_xy_gridded_hfradar(): %s: Variable %s not found.",fname, u_varname);
+            enkf_quit("reader_z_uv_adcp(): %s: Variable %s not found.",fname, u_varname);
 
-        u_var = malloc(n * sizeof(float));
+        u_var = malloc(nobs * sizeof(float));
         ncw_get_var_float(ncid,varid_u,u_var);
         if (ncw_att_exists(ncid,varid_u, "_FillValue"))
             ncw_get_att_float(ncid, varid_u, "_FillValue", &u_var_fill_value);
@@ -470,9 +699,9 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
             ncw_inq_varid(ncid, "VCUR", &varid_v);
             v_varname = "VCUR";
         } else
-            enkf_quit("reader_xy_gridded_hfradar(): %s: Variable %s not found.",fname, v_varname);
+            enkf_quit("reader_z_uv_adcp(): %s: Variable %s not found.",fname, v_varname);
 
-        v_var = malloc(n * sizeof(float));
+        v_var = malloc(nobs * sizeof(float));
         ncw_get_var_float(ncid,varid_v,v_var);
         if (ncw_att_exists(ncid,varid_v, "_FillValue"))
             ncw_get_att_float(ncid,varid_v, "_FillValue", &v_var_fill_value);
@@ -482,17 +711,17 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
             }
     }
 
+    enkf_printf("        (nt, nz) = (%u, %u)\n", nt, nz);
     ncw_close(ncid);
 
     nobs_read = 0;
-    for (i = 0; i < (int) n; ++i) {
+    for (i = 0; i < (int) nobs; ++i) {
         observation* o;
         obstype* ot;
         int ii;
-        int invalid_npoints, invalid_var, invalid_std, invalid_estd, invalid_time;
+        int invalid_var, invalid_std, invalid_estd, invalid_time;
         int invalid_u_var, invalid_v_var;
         
-        invalid_npoints = (npoints != NULL && npoints[i] == 0);
         invalid_var = var[i] == var_fill_value || isnan(var[i]);
         invalid_std = (std != NULL && (std[i] == std_fill_value || isnan(std[i])));
         invalid_estd = (estd != NULL && (estd[i] == estd_fill_value || isnan(estd[i])));
@@ -500,7 +729,7 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
         invalid_u_var = (u_var != NULL && (u_var[i] == u_var_fill_value || isnan(u_var[i])));
         invalid_v_var = (v_var != NULL && (v_var[i] == v_var_fill_value || isnan(v_var[i])));
 
-        if (invalid_npoints || invalid_var || invalid_std || invalid_estd || invalid_time || invalid_u_var || invalid_v_var)
+        if (invalid_var || invalid_std || invalid_estd || invalid_time || invalid_u_var || invalid_v_var)
             continue;
 
         int invalid_qc = 1;
@@ -528,14 +757,9 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
         o->id = obs->nobs;
         o->fid = fid;
         o->batch = 0;
-        if (iscurv == 0) {
-            o->lon = lon[i % ni];
-            o->lat = lat[i % nj];
-        } else {
-            o->lon = lon[i];
-            o->lat = lat[i];
-        }
-        o->depth = 0.0;
+        o->lon = lon[0];
+        o->lat = lat[0];
+        o->depth = z[i];
         o->fk = (double) ksurf;
         o->status = grid_xy2fij(g, o->lon, o->lat, &o->fi, &o->fj);
         if (!obs->allobs && o->status == STATUS_OUTSIDEGRID)
@@ -545,11 +769,10 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
         o->model_depth = NAN;   /* set in obs_add() */
         if (have_time) {
             double t = (singletime) ? time[0] : time[i];
-
             if (!isnan(time_add_offset))
                 o->date = (double) (t * time_scale_factor + time_add_offset) * tunits_multiple + tunits_offset;
             else
-                o->date = (double) t* tunits_multiple + tunits_offset;
+                o->date = (double) t*tunits_multiple + tunits_offset;
         } else
             o->date = NAN;
 
@@ -614,14 +837,17 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
         free(std);
     if (estd != NULL)
         free(estd);
-    if (npoints != NULL)
-        free(npoints);
     if (time != NULL)
         free(time);
     if (nqcflags > 0) {
         free(qcflagname);
         free(qcflagvals);
         free(qcflag);
+    }
+    if (construct_z) {
+        free(rz);
+        free(rh);
+        free(z);
     }
     /* Free rotation related vars */
     if (u_var != NULL)

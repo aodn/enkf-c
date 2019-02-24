@@ -70,7 +70,7 @@
 /**
  */
 void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
-                        observations *obs) {
+                         observations *obs) {
   char *varname = NULL;
   char *lonname = NULL;
   char *latname = NULL;
@@ -220,7 +220,6 @@ void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
     enkf_quit("reader_z_timeseries(): %s: could not find latitude variable\n",
               fname);
 
-
   if (zname != NULL) {
     enkf_printf("        ZNAME = %s\n", zname);
     int status = nc_inq_varid(ncid, zname, &varid_z);
@@ -237,7 +236,7 @@ void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
         else
           ndim_in_z += 1;
       }
-      }
+    }
   } else
     enkf_quit("reader_z_timeseries(): %s: could not find Z variable\n", fname);
 
@@ -280,8 +279,6 @@ void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
   }
 
   ncw_inq_vardims(ncid, varid_var, ndim_in_var, NULL, &nobs);
-  z = malloc(nobs * sizeof(double));
-
 
   ncw_get_var_double(ncid, varid_lon, lon);
   if (ncw_att_exists(ncid, varid_lon, "_FillValue"))
@@ -306,20 +303,19 @@ void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
       lat[0] = lat[0] * lat_scale_factor + lat_add_offset;
     }
   }
-
- 
+  z = malloc(nobs * sizeof(double));
   int missing_depth;
   int move_inside_water = 1;
 
   missing_depth = (varid_z == -1);
   if (missing_depth) {
-    enkf_printf("Reading ZNAME as \"nominal_instrument_depth\"...\n");
+    enkf_printf("        reading ZNAME as \"instrument_nominal_depth\"...\n");
     float instrument_depth;
     ncw_get_att_float(ncid, NC_GLOBAL, "instrument_nominal_depth",
                       &instrument_depth);
     if (instrument_depth < 0.0)
-      enkf_quit("Global Attribute \"instrument_nominal_depth\" is negative. "
-                "Aborted\n");    
+      enkf_printf("        WARNING: Global Attribute "
+                  "\"instrument_nominal_depth\" is negative\n");
     else
       instrument_depth = instrument_depth * -1;
 
@@ -327,20 +323,20 @@ void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
       z[i] = instrument_depth;
     }
   } else {
-    // PRocess a positive/negative ZNAME depth variable 
+    // PRocess a positive/negative ZNAME depth variable
     int status;
     int is_positive;
     char positive_info[MAXSTRLEN];
     char *strinside;
 
     status = nc_get_att_text(ncid, varid_z, "positive", positive_info);
-    strinside = strstr(positive_info,"down");
+    strinside = strstr(positive_info, "down");
 
     is_positive = ((status == 0) && (strinside != NULL));
     if (is_positive)
       move_inside_water = -1;
     else {
-      float valid_min,valid_max;
+      float valid_min, valid_max;
       status = nc_get_att_float(ncid, varid_z, "valid_min", &valid_min);
       status += nc_get_att_float(ncid, varid_z, "valid_max", &valid_max);
       if (status == 0) {
@@ -362,15 +358,14 @@ void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
     if (ncw_att_exists(ncid, varid_z, "add_offset")) {
       ncw_get_att_double(ncid, varid_z, "add_offset", &z_add_offset);
       ncw_get_att_double(ncid, varid_z, "scale_factor", &z_scale_factor);
-      for (i = 0; i < nobs; ++i) 
-        if (z[i] != z_fill_value) 
+      for (i = 0; i < nobs; ++i)
+        if (z[i] != z_fill_value)
           z[i] = (z[i] * z_scale_factor + z_add_offset);
     }
   }
   // Put data in the water
   for (i = 0; i < nobs; ++i)
     z[i] *= move_inside_water;
-
 
   var = malloc(nobs * sizeof(double));
   ncw_get_var_double(ncid, varid_var, var);
@@ -512,15 +507,15 @@ void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
     int invalid_qc = 1;
     char bitflag;
     for (ii = 0; ii < nqcflags; ++ii) {
-        bitflag = 0;
-        bitflag |= 1 << qcflag[ii][i];
-        if ((bitflag & qcflagvals[ii])) {
-            invalid_qc = 0;
-            break;
-        }
+      bitflag = 0;
+      bitflag |= 1 << qcflag[ii][i];
+      if ((bitflag & qcflagvals[ii])) {
+        invalid_qc = 0;
+        break;
+      }
     }
     if (invalid_qc)
-        continue;
+      continue;
 
     nobs_read++;
     obs_checkalloc(obs);

@@ -80,6 +80,7 @@ prep/reader_xy_gridded_imos_hfradar.c\
 prep/reader_z_xbt_profile.c\
 prep/reader_z_ctd_profile.c\
 prep/reader_z_timeseries.c\
+prep/reader_z_uv_adcp.c\
 prep/reader_xyz_scattered.c\
 prep/reader_xyz_gridded.c\
 prep/reader_xyh_gridded.c\

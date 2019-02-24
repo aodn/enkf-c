@@ -48,6 +48,7 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
 void reader_z_xbt_profile(char* fname, int fid, obsmeta* meta, grid* g, observations* obs);
 void reader_z_ctd_profile(char* fname, int fid, obsmeta* meta, grid* g, observations* obs);
 void reader_z_timeseries(char* fname, int fid, obsmeta* meta, grid* g, observations* obs);
+void reader_z_uv_adcp(char* fname, int fid, obsmeta* meta, grid* g, observations* obs);
 void reader_xy_gridded_multirecord(char* fname, int fid, obsmeta* meta, grid* g, observations* obs);
 
 #define _ALLREADERS_H

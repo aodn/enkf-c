@@ -453,6 +453,29 @@ char* get_zname(int ncid, char* zname)
     return NULL;
 }
 
+#define NHNAMES 2
+char* HNAMES[] = { 
+    "HEIGHT_ABOVE_SENSOR",
+    "height_above_sensor"
+};
+
+/**
+ */
+char* get_hname(int ncid, char* hname)
+{
+    int i;
+
+    if (hname != NULL) {
+        ncw_inq_varid(ncid, hname, &i);
+        return hname;
+    }
+    for (i = 0; i < NHNAMES; ++i)
+        if (ncw_var_exists(ncid, HNAMES[i]))
+            return HNAMES[i];
+
+    return NULL;
+}
+
 #define NTIMENAMES 3
 char* TIMENAMES[] = { "time",
     "Time",
