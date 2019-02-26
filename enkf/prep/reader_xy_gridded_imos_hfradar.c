@@ -540,6 +540,8 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
         o->status = grid_xy2fij(g, o->lon, o->lat, &o->fi, &o->fj);
         if (!obs->allobs && o->status == STATUS_OUTSIDEGRID)
             continue;
+        if (!obs->allobs && o->status == STATUS_LAND)
+            continue;
         if ((o->status == STATUS_OK) && (o->lon <= ot->xmin || o->lon >= ot->xmax || o->lat <= ot->ymin || o->lat >= ot->ymax))
             o->status = STATUS_OUTSIDEOBSDOMAIN;
         o->model_depth = NAN;   /* set in obs_add() */
