@@ -79,18 +79,20 @@ void reader_xyh_gridded(char* fname, int fid, obsmeta* meta, grid* gdst, observa
     char* stdname = NULL;
     char* estdname = NULL;
     char* timename = NULL;
-    char* qcflagname = NULL;
     int ncid;
     int ndim;
 
-    uint32_t qcflagvals = 0;
+    int nqcflags = 0;
+    char** qcflagname = NULL;
+    uint32_t* qcflagvals = 0;
+
     float varshift = 0.0;
     double mindepth = 0.0;
     char instrument[MAXSTRLEN];
 
     int ni = 0, nj = 0, nk = 0, nij = 0, nijk = 0;
 
-    int varid_var = -1, varid_npoints = -1, varid_std = -1, varid_estd = -1, varid_qcflag = -1, varid_time = -1;
+    int varid_var = -1, varid_npoints = -1, varid_std = -1, varid_estd = -1, varid_time = -1;
     float* var = NULL;
     float var_fill_value = NAN;
     float var_add_offset = NAN, var_scale_factor = NAN;
@@ -102,7 +104,7 @@ void reader_xyh_gridded(char* fname, int fid, obsmeta* meta, grid* gdst, observa
     float* estd = NULL;
     float estd_add_offset = NAN, estd_scale_factor = NAN;
     float estd_fill_value = NAN;
-    int32_t* qcflag = NULL;
+    uint32_t** qcflag = NULL;
     int have_time = 1;
     int singletime = -1;
     float* time = NULL;
@@ -126,25 +128,11 @@ void reader_xyh_gridded(char* fname, int fid, obsmeta* meta, grid* gdst, observa
             stdname = meta->pars[i].value;
         else if (strcasecmp(meta->pars[i].name, "ESTDNAME") == 0)
             estdname = meta->pars[i].value;
-        else if (strcasecmp(meta->pars[i].name, "QCFLAGNAME") == 0)
-            qcflagname = meta->pars[i].value;
-        else if (strcasecmp(meta->pars[i].name, "QCFLAGVALS") == 0) {
-            char seps[] = " ,";
-            char* line = meta->pars[i].value;
-            char* token;
-            int val;
-
-            qcflagvals = 0;
-            while ((token = strtok(line, seps)) != NULL) {
-                if (!str2int(token, &val))
-                    enkf_quit("%s: could not convert QCFLAGVALS entry \"%s\" to integer", meta->prmfname, token);
-                if (val < 0 || val > 31)
-                    enkf_quit("%s: QCFLAGVALS entry = %d (supposed to be in [0,31] interval", meta->prmfname, val);
-                qcflagvals |= 1 << val;
-                line = NULL;
-            }
-            if (qcflagvals == 0)
-                enkf_quit("%s: no valid flag entries found after QCFLAGVALS\n", meta->prmfname);
+        else if (strcasecmp(meta->pars[i].name, "QCFLAGNAME") == 0 || strcasecmp(meta->pars[i].name, "QCFLAGVALS") == 0) {
+            /*
+             * QCFLAGNAME and QCFLAGVALS are dealt with separately
+             */
+            ;
         } else if (strcasecmp(meta->pars[i].name, "VARSHIFT") == 0) {
             if (!str2float(meta->pars[i].value, &varshift))
                 enkf_quit("%s: can not convert VARSHIFT = \"%s\" to float\n", meta->prmfname, meta->pars[i].value);
@@ -158,6 +146,8 @@ void reader_xyh_gridded(char* fname, int fid, obsmeta* meta, grid* gdst, observa
         } else
             enkf_quit("unknown PARAMETER \"%s\"\n", meta->pars[i].name);
     }
+    get_qcflags(meta, &nqcflags, &qcflagname, &qcflagvals);
+
     if (varname == NULL)
         enkf_quit("reader_xyh_gridded(): %s: VARNAME not specified", fname);
     if (gridname == NULL)
@@ -243,10 +233,14 @@ void reader_xyh_gridded(char* fname, int fid, obsmeta* meta, grid* gdst, observa
             ncw_get_att_double(ncid, varid_var, "error_std", &var_estd);
         }
 
-    if (qcflagname != NULL) {
-        ncw_inq_varid(ncid, qcflagname, &varid_qcflag);
+    if (nqcflags > 0) {
+        int varid = -1;
+
         qcflag = malloc(nijk * sizeof(int32_t));
-        ncw_get_var_int(ncid, varid_qcflag, qcflag);
+        for (i = 0; i < nqcflags; ++i) {
+            ncw_inq_varid(ncid, qcflagname[i], &varid);
+            ncw_get_var_uint(ncid, varid, qcflag[i]);
+        }
     }
 
     if (timename != NULL)
@@ -304,8 +298,21 @@ void reader_xyh_gridded(char* fname, int fid, obsmeta* meta, grid* gdst, observa
 
                 if ((npoints != NULL && npoints[ii] == 0) || var[ii] == var_fill_value || (std != NULL && (std[ii] == std_fill_value || isnan(std[ii]))) || (estd != NULL && (estd[ii] == estd_fill_value || isnan(estd[ii]))) || (have_time && !singletime && (time[ii] == time_fill_value || isnan(time[ii]))))
                     continue;
-                if (qcflag != NULL && !(qcflag[ii] | qcflagvals))
-                    continue;
+
+                if (qcflagvals != NULL) {
+                    int invalid_qc = 1;
+                    char bitflag;
+                    for (ii = 0; ii < nqcflags; ++ii) {
+                        bitflag = 0;
+                        bitflag |= 1 << qcflag[ii][i];
+                        if ((bitflag & qcflagvals[ii])) {
+                            invalid_qc = 0;
+                            break;
+                        }
+                    }
+                    if (invalid_qc)
+                        continue;
+                }
 
                 nobs_read++;
                 obs_checkalloc(obs);

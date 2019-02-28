@@ -503,18 +503,20 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
         if (invalid_npoints || invalid_var || invalid_std || invalid_estd || invalid_time || invalid_u_var || invalid_v_var)
             continue;
 
-        int invalid_qc = 1;
-        char bitflag;
-        for (ii = 0; ii < nqcflags; ++ii) {
-            bitflag = 0;
-            bitflag |= 1 << qcflag[ii][i];
-            if ((bitflag & qcflagvals[ii])) {
-                invalid_qc = 0;
-                break;
+        if (qcflagvals != NULL) {
+            int invalid_qc = 1;
+            char bitflag;
+            for (ii = 0; ii < nqcflags; ++ii) {
+                bitflag = 0;
+                bitflag |= 1 << qcflag[ii][i];
+                if ((bitflag & qcflagvals[ii])) {
+                    invalid_qc = 0;
+                    break;
+                }
             }
+            if (invalid_qc)
+                continue;
         }
-        if (invalid_qc)
-            continue;
 
         nobs_read++;
         obs_checkalloc(obs);
