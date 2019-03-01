@@ -494,7 +494,7 @@ void reader_xy_gridded_imos_hfradar(char* fname, int fid, obsmeta* meta, grid* g
         
         invalid_npoints = (npoints != NULL && npoints[i] == 0);
         invalid_var = var[i] == var_fill_value || isnan(var[i]);
-        invalid_std = (std != NULL && (std[i] == std_fill_value || isnan(std[i])));
+        invalid_std = (std != NULL && (std[i] == std_fill_value || isnan(std[i]) || (std[i] == 0.)));
         invalid_estd = (estd != NULL && (estd[i] == estd_fill_value || isnan(estd[i])));
         invalid_time = (have_time && !singletime && (time[i] == time_fill_value || isnan(time[i])));
         invalid_u_var = (u_var != NULL && (u_var[i] == u_var_fill_value || isnan(u_var[i])));
