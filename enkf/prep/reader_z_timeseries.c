@@ -224,7 +224,7 @@ void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
     enkf_printf("        ZNAME = %s\n", zname);
     int status = nc_inq_varid(ncid, zname, &varid_z);
     if (status != NC_NOERR) {
-      enkf_printf("        Warning: ZNAME is missing.\n");
+      enkf_printf("        WARNING: ZNAME is missing.\n");
       ndim_in_z = 0;
     } else {
       zname = get_zname(ncid, zname);
@@ -303,9 +303,11 @@ void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
       lat[0] = lat[0] * lat_scale_factor + lat_add_offset;
     }
   }
+
   z = malloc(nobs * sizeof(double));
   int missing_depth;
   int move_inside_water = 1;
+  int invalid_depth = 1;
 
   missing_depth = (varid_z == -1);
   if (missing_depth) {
@@ -322,6 +324,8 @@ void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
     for (i = 0; i < nobs; i++) {
       z[i] = instrument_depth;
     }
+    invalid_depth = 0;
+
   } else {
     // PRocess a positive/negative ZNAME depth variable
     int status;
@@ -346,7 +350,7 @@ void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
           move_inside_water = -1;
       } else {
         // Assumes positive measurments are in the ocean - AODN data.
-        enkf_printf("Warning: Assuming ZNAME variable is positive down.\n");
+        enkf_printf("         WARNING: Assuming ZNAME variable is positive down.\n");
         move_inside_water = -1;
       }
     }
@@ -358,11 +362,30 @@ void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
     if (ncw_att_exists(ncid, varid_z, "add_offset")) {
       ncw_get_att_double(ncid, varid_z, "add_offset", &z_add_offset);
       ncw_get_att_double(ncid, varid_z, "scale_factor", &z_scale_factor);
-      for (i = 0; i < nobs; ++i)
-        if (z[i] != z_fill_value)
+      for (i = 0; i < nobs; ++i) {
+        if (z[i] != z_fill_value) {
           z[i] = (z[i] * z_scale_factor + z_add_offset);
+          invalid_depth = 0;
+        }
+      }
     }
   }
+  
+  if (invalid_depth) {
+    enkf_printf("         WARNING: All depths are invalid. Reading instrument_nominal_depth attribute.");
+    float instrument_depth;
+    ncw_get_att_float(ncid, NC_GLOBAL, "instrument_nominal_depth",
+                      &instrument_depth);
+    if (instrument_depth < 0.0)
+      enkf_printf("        WARNING: Global Attribute "
+                  "\"instrument_nominal_depth\" is negative\n");
+    else
+      instrument_depth = instrument_depth * -1;
+
+    for (i = 0; i < nobs; i++) 
+      z[i] = instrument_depth;
+  }
+
   // Put data in the water
   for (i = 0; i < nobs; ++i)
     z[i] *= move_inside_water;
@@ -496,12 +519,7 @@ void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
     if (lon[0] == lon_fill_value || isnan(lon[0]) || lat[0] == lat_fill_value ||
         isnan(lat[0]))
       continue;
-    if (z[i] == z_fill_value || isnan(z[i]) || var[i] == var_fill_value ||
-        isnan(var[i]) ||
-        (std != NULL && (std[i] == std_fill_value || isnan(std[i]))) ||
-        (estd != NULL && (estd[i] == estd_fill_value || isnan(estd[i]))) ||
-        (have_time && !singletime &&
-         (time[i] == time_fill_value || isnan(time[i]))))
+    if (z[i] == z_fill_value || isnan(z[i]) || var[i] == var_fill_value || isnan(var[i]) || (std != NULL && (std[i] == std_fill_value || isnan(std[i]))) || (estd != NULL && (estd[i] == estd_fill_value || isnan(estd[i]))) || (have_time && !singletime && (time[i] == time_fill_value || isnan(time[i]))))
       continue;
 
     if (qcflagvals != NULL) {
@@ -559,8 +577,8 @@ void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
           ((singletime) ? time[0] : time[i]) * tunits_multiple + tunits_offset;
     else
       o->date = NAN;
+  
     o->aux = -1;
-
     obs->nobs++;
   }
   enkf_printf("        nobs = %d\n", nobs_read);
