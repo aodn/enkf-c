@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- * File:        reader_z_ctd_profile.c
+ * File:        reader_z_profile.c
  *
  * Created:     06/02/2019
  *
@@ -9,7 +9,7 @@
  *              Hugo Oliveira
  *              AODN
  *
- * Description: Generic reader for IMOS ANMN ctd profile data.
+ * Description: Generic reader for IMOS z profile data [ CTD and XBT ].
  *                There are a number of parameters that must (++) or can be
  *              specified if they differ from the default value (+). Some
  *              parameters are optional (-):
@@ -69,7 +69,7 @@
 
 /**
  */
-void reader_z_ctd_profile(char *fname, int fid, obsmeta *meta, grid *g,
+void reader_z_profile(char *fname, int fid, obsmeta *meta, grid *g,
                               observations *obs) {
   char *varname = NULL;
   char *lonname = NULL;
@@ -162,7 +162,7 @@ void reader_z_ctd_profile(char *fname, int fid, obsmeta *meta, grid *g,
   get_qcflags(meta, &nqcflags, &qcflagname, &qcflagvals);
 
   if (varname == NULL)
-    enkf_quit("reader_z_ctd_profile(): %s VARNAME not specified", fname);
+    enkf_quit("reader_z_profile(): %s VARNAME not specified", fname);
   else
     enkf_printf("        VARNAME = %s\n", varname);
 
@@ -203,7 +203,7 @@ void reader_z_ctd_profile(char *fname, int fid, obsmeta *meta, grid *g,
     }
   } else
     enkf_quit(
-        "reader_z_ctd_profile(): %s: could not find longitude variable",
+        "reader_z_profile(): %s: could not find longitude variable",
         fname);
 
   latname = get_latname(ncid, latname);
@@ -219,7 +219,7 @@ void reader_z_ctd_profile(char *fname, int fid, obsmeta *meta, grid *g,
     }
   } else
     enkf_quit(
-        "reader_z_ctd_profile(): %s: could not find latitude variable",
+        "reader_z_profile(): %s: could not find latitude variable",
         fname);
 
   zname = get_zname(ncid, zname);
@@ -234,11 +234,11 @@ void reader_z_ctd_profile(char *fname, int fid, obsmeta *meta, grid *g,
         ndim_in_z += 1;
     }
   } else
-    enkf_quit("reader_z_ctd_profile(): %s: could not find Z variable",
+    enkf_quit("reader_z_profile(): %s: could not find Z variable",
               fname);
 
   if (ndim_in_lon != ndim_in_lat)
-    enkf_quit("reader_z_ctd_profile(): %s: dimension number mismatch "
+    enkf_quit("reader_z_profile(): %s: dimension number mismatch "
               "between lon/lat",
               fname);
 
@@ -248,7 +248,7 @@ void reader_z_ctd_profile(char *fname, int fid, obsmeta *meta, grid *g,
     lon = malloc(sizeof(double));
     lat = malloc(sizeof(double));
   } else
-    enkf_quit("reader_z_ctd_profile(): %s: Longitude has %s and latitude "
+    enkf_quit("reader_z_profile(): %s: Longitude has %s and latitude "
               "has %s number of dimensions. This reader accepts only "
               "dimensionless or singleton coordinate variables.",
               fname, ndim_in_lon, ndim_in_lat);
@@ -266,7 +266,7 @@ void reader_z_ctd_profile(char *fname, int fid, obsmeta *meta, grid *g,
       if (var_dimids[i] != 1)
         ++counter;
       if (counter > 1)
-        enkf_quit("reader_z_ctd_profile(): %s: Non-singleton dimension %d "
+        enkf_quit("reader_z_profile(): %s: Non-singleton dimension %d "
                   "in variable %s is not part of the xyz variables.",
                   fname, var_dimids[i], varname);
     }
@@ -420,7 +420,7 @@ void reader_z_ctd_profile(char *fname, int fid, obsmeta *meta, grid *g,
     enkf_printf("        TIMENAME = %s\n", timename);
     ncw_inq_varid(ncid, timename, &varid_time);
   } else {
-    enkf_printf("        reader_z_ctd_profile(): %s: no TIME variable\n",
+    enkf_printf("        reader_z_profile(): %s: no TIME variable\n",
                 fname);
     have_time = 0;
   }

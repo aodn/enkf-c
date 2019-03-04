@@ -78,8 +78,7 @@ obsreader_entry allreaders[] = {
     {"ALL", "xyz_gridded", reader_xyz_gridded},
     {"ALL", "xyh_gridded", reader_xyh_gridded},
     {"ALL", "xy_gridded_imos_hfradar", reader_xy_gridded_imos_hfradar},
-    {"ALL", "z_xbt_profile", reader_z_xbt_profile},
-    {"ALL", "z_ctd_profile", reader_z_ctd_profile},
+    {"ALL", "z_profile", reader_z_profile},
     {"ALL", "z_timeseries", reader_z_timeseries},
     {"ALL", "z_uv_adcp", reader_z_uv_adcp},
     {"ALL", "xy_gridded_multirecord", reader_xy_gridded_multirecord}
