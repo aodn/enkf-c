@@ -406,7 +406,7 @@ void reader_xy_gridded(char* fname, int fid, obsmeta* meta, grid* g, observation
         }
         if (iscurv == 0) {
             o->lon = lon[i % ni];
-            o->lat = lat[i % nj];
+            o->lat = lat[i / ni];
         } else {
             o->lon = lon[i];
             o->lat = lat[i];

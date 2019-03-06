@@ -171,7 +171,7 @@ void reader_xy_gridded_multirecord(char* fname, int fid, obsmeta* meta, grid* g,
     ncw_inq_varid(ncid, varname, &varid_var);
     ncw_inq_vardims(ncid, varid_var, 3, &ndim_var, dimlen_var);
     if (ndim_var == 3) {
-        n_var = dimlen_var[0]* dimlen_var[1] * dimlen_var[2];
+        n_var = dimlen_var[0] * dimlen_var[1] * dimlen_var[2];
     } else if (ndim_var == 2) {
         if (ncw_var_hasunlimdim(ncid, varid_var))
             enkf_quit("reader_xy_gridded_multirecord(): %s: %s: not enough spatial dimensions (must be 2)", fname, varname);
@@ -214,6 +214,9 @@ void reader_xy_gridded_multirecord(char* fname, int fid, obsmeta* meta, grid* g,
     nt = dimlen_var[0];
 
     enkf_printf("        (nt, ni, nj) = (%u, %u, %u)\n", nt, ni, nj);
+    if (ni != 1 || nj != 1)
+        enkf_quit("reader_xy_gridded_multirecord(): %s: horizontal dimensions of variable \"%s\" are not singleton", fname, varname);
+
     n = nt * ni * nj;
     if (n != n_var)
         enkf_quit("reader_xy_gridded_multirecord(): %s: dimensions of variable \"%s\" do not match coordinate dimensions", fname, varname);
@@ -403,7 +406,7 @@ void reader_xy_gridded_multirecord(char* fname, int fid, obsmeta* meta, grid* g,
         }
         if (iscurv == 0) {
             o->lon = lon[i % ni];
-            o->lat = lat[i % nj];
+            o->lat = lat[i / ni];
         } else {
             o->lon = lon[i];
             o->lat = lat[i];
