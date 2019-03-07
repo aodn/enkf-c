@@ -903,11 +903,11 @@ void obs_write(observations* obs, char fname[])
     }
     assert(ii == nobs);
 
-    /* ncw_put_var_int(ncid, varid_id, id); */
-    /* ncw_put_var_int(ncid, varid_idorig, id_orig); */
+    ncw_put_var_int(ncid, varid_id, id); 
+    ncw_put_var_int(ncid, varid_idorig, id_orig); 
     ncw_put_var_short(ncid, varid_type, type);
-    /* ncw_put_var_short(ncid, varid_product, product); */
-    /* ncw_put_var_short(ncid, varid_instrument, instrument); */
+    ncw_put_var_short(ncid, varid_product, product); 
+    ncw_put_var_short(ncid, varid_instrument, instrument); 
     ncw_put_var_short(ncid, varid_fid, fid);
     ncw_put_var_int(ncid, varid_batch, batch);
     ncw_put_var_double(ncid, varid_value, value);
