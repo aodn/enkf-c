@@ -338,7 +338,7 @@ void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
 
     is_positive = ((status == 0) && (strinside != NULL));
     if (is_positive)
-      move_inside_water = -1;
+      invalid_depth = 0;
     else {
       float valid_min, valid_max;
       status = nc_get_att_float(ncid, varid_z, "valid_min", &valid_min);
@@ -347,7 +347,7 @@ void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
         is_positive = ((valid_min < 0) && (valid_max > 0) &&
                        (abs(valid_min) < abs(valid_max)));
         if (is_positive)
-          move_inside_water = -1;
+          invalid_depth = 0;
       } else {
         // Assumes positive measurments are in the ocean - AODN data.
         enkf_printf("         WARNING: Assuming ZNAME variable is positive down.\n");
@@ -372,7 +372,7 @@ void reader_z_timeseries(char *fname, int fid, obsmeta *meta, grid *g,
   }
   
   if (invalid_depth) {
-    enkf_printf("         WARNING: All depths are invalid. Reading instrument_nominal_depth attribute.");
+    enkf_printf("         WARNING: All depths are invalid. Reading instrument_nominal_depth attribute.\n");
     float instrument_depth;
     ncw_get_att_float(ncid, NC_GLOBAL, "instrument_nominal_depth",
                       &instrument_depth);

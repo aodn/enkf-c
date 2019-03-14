@@ -404,13 +404,15 @@ void reader_xy_gridded_multirecord(char* fname, int fid, obsmeta* meta, grid* g,
                     o->std = (o->std > estd[i]) ? o->std : estd[i];
             }
         }
-        if (iscurv == 0) {
-            o->lon = lon[i % ni];
-            o->lat = lat[i / ni];
-        } else {
-            o->lon = lon[i];
-            o->lat = lat[i];
-        }
+        o->lon = lon[0];
+        o->lat = lat[0];
+        /* if (iscurv == 0) { */
+        /*     o->lon = lon[i % ni]; */
+        /*     o->lat = lat[i / ni]; */
+        /* } else { */
+            /* o->lon = lon[i]; */
+            /* o->lat = lat[i]; */
+        /* } */
         o->depth = 0.0;
         o->fk = (double) ksurf;
         o->status = grid_xy2fij(g, o->lon, o->lat, &o->fi, &o->fj);

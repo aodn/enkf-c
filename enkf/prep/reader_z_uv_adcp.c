@@ -99,7 +99,7 @@
  */
 void reader_z_uv_adcp(char* fname, int fid, obsmeta* meta, grid* g, observations* obs)
 {
-    int ksurf = grid_getsurflayerid(g);
+//    int ksurf = grid_getsurflayerid(g);
 
     /* Variables required to interpolate angles */
     int isperiodic_i = grid_isperiodic_i(g);
@@ -493,7 +493,7 @@ void reader_z_uv_adcp(char* fname, int fid, obsmeta* meta, grid* g, observations
             strinside = strstr(positive_info, "down");
             is_positive = ((status == 0) && (strinside != NULL));
             if (is_positive)
-                move_inside_water = -1;
+                ;
             else {
                 float valid_min,valid_max;
                 status = nc_get_att_float(ncid, varid_z, "valid_min", &valid_min);
@@ -502,7 +502,7 @@ void reader_z_uv_adcp(char* fname, int fid, obsmeta* meta, grid* g, observations
                     is_positive = ((valid_min < 0) && (valid_max > 0) &&
                             (abs(valid_min) < abs(valid_max)));
                     if (is_positive)
-                        move_inside_water = -1;
+                        ;
                 } else {
                     // Assumes positive measurments are in the ocean - AODN data.
                     enkf_printf("         Warning: Assuming ZNAME variable is positive down.\n");
@@ -549,7 +549,7 @@ void reader_z_uv_adcp(char* fname, int fid, obsmeta* meta, grid* g, observations
                 else
                     ht = rh[j];
 
-                z[nc] = zt*move_inside_water + ht;
+                z[nc] = zt*move_inside_water - ht;
                 ++nc;
             }
         }
@@ -762,17 +762,20 @@ void reader_z_uv_adcp(char* fname, int fid, obsmeta* meta, grid* g, observations
         o->lon = lon[0];
         o->lat = lat[0];
         o->depth = z[i];
-        o->fk = (double) ksurf;
         o->status = grid_xy2fij(g, o->lon, o->lat, &o->fi, &o->fj);
         if (!obs->allobs && o->status == STATUS_OUTSIDEGRID)
             continue;
         if ((o->status == STATUS_OK) && (o->lon <= ot->xmin || o->lon >= ot->xmax || o->lat <= ot->ymin || o->lat >= ot->ymax))
             o->status = STATUS_OUTSIDEOBSDOMAIN;
+        if (o->status == STATUS_OK)
+            o->status = grid_z2fk(g, o->fi, o->fj, o->depth, &o->fk);
+        else
+            o->fk =NAN;
         o->model_depth = NAN;   /* set in obs_add() */
         if (have_time) {
             double t = (singletime) ? time[0] : time[i];
             if (!isnan(time_add_offset))
-                o->date = (double) (t * time_scale_factor + time_add_offset) * tunits_multiple + tunits_offset;
+                o->date = (double) ((t * time_scale_factor + time_add_offset) * tunits_multiple + tunits_offset);
             else
                 o->date = (double) t*tunits_multiple + tunits_offset;
         } else
