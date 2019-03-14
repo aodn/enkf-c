@@ -1,0 +1,13 @@
+NAME = u_surface
+VAR = u
+ISSURFACE = 1
+HFUNCTION = standard
+MINVALUE = -1.6
+MAXVALUE = +1.6
+
+NAME = v_surface
+VAR = v
+ISSURFACE = 1
+HFUNCTION = standard
+MINVALUE = -1.6
+MAXVALUE = +1.6

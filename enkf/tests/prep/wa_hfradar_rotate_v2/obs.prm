@@ -1,0 +1,47 @@
+product == IMOS_acorn_uv_hfradar_cbg_dm
+type = u_surface
+reader = xy_gridded_imos_hfradar
+file=../../files/obs/IMOS_ACORN_V_20160101T003000Z_ROT_FV00_1-hour-avg.nc
+parameter ROTATION = 1
+parameter VARNAME = UCUR
+parameter STDNAME = UCUR_sd
+parameter QCFLAGNAME = UCUR_quality_control
+parameter QCFLAGVALS = 0
+parameter QCFLAGNAME = UCUR_quality_control
+parameter QCFLAGVALS = 1
+parameter QCFLAGNAME = UCUR_quality_control
+parameter QCFLAGVALS = 2
+parameter QCFLAGNAME = UCUR_quality_control
+parameter QCFLAGVALS = 3
+parameter QCFLAGNAME = VCUR_quality_control
+parameter QCFLAGVALS = 0
+parameter QCFLAGNAME = VCUR_quality_control
+parameter QCFLAGVALS = 1
+parameter QCFLAGNAME = VCUR_quality_control
+parameter QCFLAGVALS = 2
+parameter QCFLAGNAME = VCUR_quality_control
+parameter QCFLAGVALS = 3
+
+product == IMOS_acorn_uv_hfradar_cbg_dm
+type = v_surface
+reader = xy_gridded_imos_hfradar
+file=../../files/obs/IMOS_ACORN_V_20160101T003000Z_ROT_FV00_1-hour-avg.nc
+parameter ROTATION = 1
+parameter VARNAME = VCUR
+parameter STDNAME = VCUR_sd
+parameter QCFLAGNAME = UCUR_quality_control
+parameter QCFLAGVALS = 0
+parameter QCFLAGNAME = UCUR_quality_control
+parameter QCFLAGVALS = 1
+parameter QCFLAGNAME = UCUR_quality_control
+parameter QCFLAGVALS = 2
+parameter QCFLAGNAME = UCUR_quality_control
+parameter QCFLAGVALS = 3
+parameter QCFLAGNAME = VCUR_quality_control
+parameter QCFLAGVALS = 0
+parameter QCFLAGNAME = VCUR_quality_control
+parameter QCFLAGVALS = 1
+parameter QCFLAGNAME = VCUR_quality_control
+parameter QCFLAGVALS = 2
+parameter QCFLAGNAME = VCUR_quality_control
+parameter QCFLAGVALS = 3
