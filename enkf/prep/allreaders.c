@@ -81,6 +81,7 @@ obsreader_entry allreaders[] = {
     {"ALL", "z_profile", reader_z_profile},
     {"ALL", "z_timeseries", reader_z_timeseries},
     {"ALL", "z_uv_adcp", reader_z_uv_adcp},
+    {"ALL", "z_uv_cm", reader_z_uv_cm},
     {"ALL", "xy_gridded_multirecord", reader_xy_gridded_multirecord}
 
 };
