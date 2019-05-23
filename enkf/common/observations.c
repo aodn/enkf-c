@@ -963,11 +963,12 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
     int dimid_nobs[1];
 
     /* int varid_type, varid_product, varid_instrument, varid_id, varid_idorig, varid_fid, varid_batch, varid_value, varid_std, varid_lon, varid_lat, varid_depth, varid_mdepth, varid_fi, varid_fj, varid_fk, varid_date, varid_status, varid_aux; */
-    int varid_type, varid_product, varid_fid, varid_value, varid_var, varid_lon, varid_lat, varid_depth, varid_mdepth, varid_fi, varid_fj, varid_fk, varid_date, varid_status;
+    int varid_type, varid_product, varid_instrument, varid_fid, varid_value, varid_var, varid_lon, varid_lat, varid_depth, varid_mdepth, varid_fi, varid_fj, varid_fk, varid_date, varid_status;
 
     int* id;
     int* id_orig;
     short int* type;
+    short int* obs_type;
     short int* product;
     short int* instrument;
     short int* fid;
@@ -1096,7 +1097,7 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
     ncw_put_att_text(ncid, varid_obs_variance, "units", "squared state variable units");
 
     int varid_obs_type;
-    ncw_def_var(ncid, "obs_type", NC_INT, 1, dimid_nobs, &varid_obs_type);
+    ncw_def_var(ncid, "obs_type", NC_SHORT, 1, dimid_nobs, &varid_obs_type);
     ncw_put_att_text(ncid, varid_obs_type, "long_name", "model state variable associated with observation");
     //This are pretty much fixed.
     ncw_put_att_text(ncid, varid_obs_type, "flag_values", "1, 2, 3, 4, 5, 6, 7");
@@ -1128,8 +1129,8 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
     ncw_put_att_int(ncid, varid_product, "flag_values", i, product_flag_value);
 
 
-    /* ncw_def_var(ncid, "instrument", NC_SHORT, 1, dimid_nobs, &varid_instrument); */
-    /* ncw_put_att_text(ncid, varid_instrument, "long_name", "observation instrument ID"); */
+    ncw_def_var(ncid, "instrument", NC_SHORT, 1, dimid_nobs, &varid_instrument);
+    ncw_put_att_text(ncid, varid_instrument, "long_name", "observation instrument ID");
     /* ncw_def_var(ncid, "batch", NC_SHORT, 1, dimid_nobs, &varid_batch); */
     /* ncw_put_att_text(ncid, varid_batch, "long_name", "observation batch ID"); */
 
@@ -1165,13 +1166,15 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
     ncw_put_att_text(ncid, varid_lat, "long_name", "observation latitude");
     ncw_put_att_text(ncid, varid_lat, "long_name", "degrees_north");
 
-  
-    
     ncw_def_var(ncid, "fid", NC_SHORT, 1, dimid_nobs, &varid_fid);
     ncw_put_att_text(ncid, varid_fid, "long_name", "observation data file ID");
 
-    ncw_def_var(ncid, "type", NC_SHORT, 1, dimid_nobs, &varid_type);
-    ncw_put_att_text(ncid, varid_type, "long_name", "observation type ID");
+    if (strcmp(fname,"observations-orig-ROMS-4DVAR.nc") == 0) { 
+      ncw_def_var(ncid, "type", NC_SHORT, 1, dimid_nobs, &varid_type);
+      ncw_put_att_text(ncid, varid_type, "long_name", "observation type ID");
+      for (i = 0; i < obs->nobstypes; ++i)
+         ncw_put_att_int(ncid, varid_type, obs->obstypes[i].name, 1, &i);
+    }
 
     ncw_def_var(ncid, "model_depth", NC_FLOAT, 1, dimid_nobs, &varid_mdepth);
     ncw_put_att_text(ncid, varid_mdepth, "long_name", "model bottom depth at the observation location");
@@ -1200,15 +1203,13 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
     /* snprintf(tunits, MAXSTRLEN, "days from %s", obs->datestr); */
     /* ncw_put_att_text(ncid, varid_date, "units", tunits); */
 
-    for (i = 0; i < obs->nobstypes; ++i)
-        ncw_put_att_int(ncid, varid_type, obs->obstypes[i].name, 1, &i);
 
     /* for (i = 0; i < st_getsize(obs->products); ++i) */
     /*     //TODO HERE: Apply differently */
     /*     ncw_put_att_int(ncid, varid_product, st_findstringbyindex(obs->products, i), 1, &i); */
 
-    /* for (i = 0; i < st_getsize(obs->instruments); ++i) */
-    /*     ncw_put_att_int(ncid, varid_instrument, st_findstringbyindex(obs->instruments, i), 1, &i); */
+    for (i = 0; i < st_getsize(obs->instruments); ++i)
+        ncw_put_att_int(ncid, varid_instrument, st_findstringbyindex(obs->instruments, i), 1, &i);
 
     for (i = 0; i < st_getsize(obs->datafiles); ++i) {
         char attname[NC_MAX_NAME];
@@ -1226,6 +1227,7 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
     id = malloc(nobs * sizeof(int));
     id_orig = malloc(nobs * sizeof(int));
     type = malloc(nobs * sizeof(short int));
+    obs_type = malloc(nobs * sizeof(short int));
     product = malloc(nobs * sizeof(short int));
     instrument = malloc(nobs * sizeof(short int));
     fid = malloc(nobs * sizeof(short int));
@@ -1336,9 +1338,32 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
 
     /* ncw_put_var_int(ncid, varid_id, id); */
     /* ncw_put_var_int(ncid, varid_idorig, id_orig); */
-    ncw_put_var_short(ncid, varid_type, type);
+
+   
+    /* Transform type to obs_type "zeta ubar vbar u v temperature salinity".*/
+    for (i = 0; i < obs->nobs; ++i) {
+      char* otname = obs->obstypes[type[i]].name;
+      if (strcmp(otname,"sla") == 0)
+        obs_type[i] = 1;
+      else if (strcmp(otname,"ubar") == 0)
+        obs_type[i] = 2;
+      else if (strcmp(otname,"vbar") == 0)
+        obs_type[i] = 3;
+      else if ((strcmp(otname,"u_surface") == 0) || (strcmp(otname,"u") == 0))
+        obs_type[i] = 4;
+      else if ((strcmp(otname,"v_surface") == 0) || (strcmp(otname,"v") == 0))
+        obs_type[i] = 5;
+      else if ((strcmp(otname,"temp") == 0) || (strcmp(otname,"sst") == 0))
+        obs_type[i] = 6;
+      else if ((strcmp(otname,"salt") == 0) || (strcmp(otname,"sss") == 0))
+        obs_type[i] = 7;
+      else
+        obs_type[i] = -1;
+    }
+
+    ncw_put_var_short(ncid, varid_obs_type, obs_type);
     ncw_put_var_short(ncid, varid_product, product);
-    /* ncw_put_var_short(ncid, varid_instrument, instrument); */
+    ncw_put_var_short(ncid, varid_instrument, instrument);
     ncw_put_var_short(ncid, varid_fid, fid);
     /* ncw_put_var_short(ncid, varid_batch, batch); */
     ncw_put_var_double(ncid, varid_value, value);

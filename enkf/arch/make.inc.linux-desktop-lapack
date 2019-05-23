@@ -39,7 +39,7 @@ LIB_GU = -L/home/holiveira/apps/gridutils-c/lib -lgu
 # choose gcc if you do not have clang
 #
 CC = gcc
-CFLAGS = -g -pedantic -Wall -std=c99 -D_GNU_SOURCE -Os
+CFLAGS = -g -pedantic -Wall -std=c99 -D_GNU_SOURCE -O0
 
 # which compiler/flags to use with MPI
 #

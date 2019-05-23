@@ -1,1 +1,1 @@
-arch/make.inc.linux-docker
+arch/make.inc.linux-desktop-lapack
