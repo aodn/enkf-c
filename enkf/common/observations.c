@@ -24,6 +24,7 @@
 #include "definitions.h"
 #include "utils.h"
 #include "observations.h"
+#include "stringtable.h"
 
 #define NOBSTYPES_INC 10
 #define KD_INC 50000
@@ -40,6 +41,23 @@ typedef union {
     int key_int[2];
     short int key_short[4];
 } keydata;
+
+typedef struct {
+    char* s;
+    int index;                  /* An index. Is set during the string entry.
+                                 * If "-1" entered, is set to index of this
+                                 * entry in the stringtable. */
+    int naccess;                /* Number of times looked for. */
+} stringentry;
+
+struct stringtable {
+    char* name;
+    int unique;                 /* flag: whether all entries must be unique;
+                                 * 1 by default */
+    int n;
+    int sorted;                 /* flag */
+    stringentry** se;
+};
 
 /**
  */
@@ -574,7 +592,7 @@ void obs_read(observations* obs, char fname[])
      */
     ncw_inq_varnatts(ncid, varid_product, &natts);
     for (i = 0; i < natts; ++i) {
-        char name[NC_MAX_NAME];
+        char name[NC_MAX_NAME*10];
         nc_type type;
         size_t len;
 
@@ -593,7 +611,7 @@ void obs_read(observations* obs, char fname[])
      */
     ncw_inq_varnatts(ncid, varid_instrument, &natts);
     for (i = 0; i < natts; ++i) {
-        char name[NC_MAX_NAME];
+        char name[NC_MAX_NAME*10];
         nc_type type;
         size_t len;
 
@@ -612,8 +630,8 @@ void obs_read(observations* obs, char fname[])
      */
     ncw_inq_varnatts(ncid, varid_fid, &natts);
     for (i = 0; i < natts; ++i) {
-        char name[NC_MAX_NAME];
-        char attstr[MAXSTRLEN];
+        char name[NC_MAX_NAME*10];
+        char attstr[MAXSTRLEN*10];
         size_t len;
         int id;
 
@@ -835,10 +853,10 @@ void obs_write(observations* obs, char fname[])
         ncw_put_att_int(ncid, varid_instrument, st_findstringbyindex(obs->instruments, i), 1, &i);
 
     for (i = 0; i < st_getsize(obs->datafiles); ++i) {
-        char attname[NC_MAX_NAME];
+        char attname[NC_MAX_NAME*10];
         char* datafile = st_findstringbyindex(obs->datafiles, i);
 
-        snprintf(attname, NC_MAX_NAME, "%d", i);
+        snprintf(attname, NC_MAX_NAME*10, "%d", i);
         ncw_put_att_text(ncid, varid_fid, attname, datafile);
     }
 
@@ -1112,7 +1130,7 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
     ncw_def_var(ncid, "obs_provenance", NC_SHORT, 1, dimid_nobs, &varid_product);
     ncw_put_att_text(ncid, varid_product, "long_name", "observation origin");
 
-    char product_flag_meanings[NC_MAX_NAME];
+    char product_flag_meanings[NC_MAX_NAME*10];
     strcpy(product_flag_meanings,"");
     
     int psize;
@@ -1212,10 +1230,10 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
         ncw_put_att_int(ncid, varid_instrument, st_findstringbyindex(obs->instruments, i), 1, &i);
 
     for (i = 0; i < st_getsize(obs->datafiles); ++i) {
-        char attname[NC_MAX_NAME];
+        char attname[NC_MAX_NAME*10];
         char* datafile = st_findstringbyindex(obs->datafiles, i);
 
-        snprintf(attname, NC_MAX_NAME, "%d", i);
+        snprintf(attname, NC_MAX_NAME*10, "%d", i);
         ncw_put_att_text(ncid, varid_fid, attname, datafile);
     }
 
@@ -1589,14 +1607,234 @@ void obs_superob(observations* obs, __compar_d_fn_t cmp_obs, observations** sobs
             o = &data[ii];
             if (o->status == STATUS_THINNED)
                 continue;
-            if (so->product != o->product)
-                so->product = -1;
-            if (so->instrument != o->instrument)
-                so->instrument = -1;
-            if (so->fid != o->fid)
-                so->fid = -1;
-            if (so->batch != o->batch)
+            if (so->product != o->product) {
+                // Merge product names in a nice fashion
+                char* so_pname = st_findstringbyindex(obs->products, so->product);
+                char* o_pname = st_findstringbyindex(obs->products, o->product);
+                char* so_ismerged = strstr(so_pname,"&");
+                char* o_ismerged = strstr(o_pname,"&");
+                stringtable* combination = st_create("combination");
+                
+                if ((!so_ismerged) && (!o_ismerged)) {
+                  char product_combined[NC_MAX_NAME*10];
+                  st_add_ifabsent(combination,so_pname,-1);
+                  st_add_ifabsent(combination,o_pname,-1);
+                  st_sort(combination);
+                  strcpy(product_combined,combination->se[0][0].s);
+                  strcat(product_combined,"&");
+                  strcat(product_combined,combination->se[1][0].s);
+                  st_add_ifabsent(obs->products,product_combined,-1);
+                  so->product = st_findindexbystring(obs->products,product_combined);
+                }
+                else { 
+                  int long unsigned i;
+                  int j;
+                  int n_sep_so = 0;
+                  int n_sep_o = 0;
+                  char product_combination_so[NC_MAX_NAME*10];
+                  char product_combination_o[NC_MAX_NAME*10];
+                  char product_storage[NC_MAX_NAME*10];
+
+                  //*{{{ *//
+                  for (i=0; i < strlen(so_pname) ; i++) {
+                    if (strncmp(&so_pname[i],"&",1) == 0)
+                      n_sep_so += 1;
+                  }
+                  strcpy(product_combination_so,so_pname);
+                  if (n_sep_so == 0)
+                    st_add_ifabsent(combination,product_combination_so,-1);
+                  else {
+                    for (j=0; j <= n_sep_so; j++) {
+                      if (j==0)
+                        st_add_ifabsent(combination,strtok(product_combination_so,"&"),-1);
+                      else
+                        st_add_ifabsent(combination,strtok(NULL,"&"),-1);
+                    }
+                  }
+                  /*}}}*/
+                
+                  /* {{{ */
+                  for (i=0; i < strlen(o_pname) ; i++) {
+                    if (strncmp(&o_pname[i],"&",1) == 0)
+                      n_sep_o += 1;
+                  }
+                  strcpy(product_combination_o,o_pname);
+                  if (n_sep_o == 0)
+                    st_add_ifabsent(combination,product_combination_o,-1);
+                  else {
+                    for (j=0; j <= n_sep_o; j++) {
+                      if (j==0)
+                        st_add_ifabsent(combination,strtok(product_combination_o,"&"),-1);
+                      else
+                        st_add_ifabsent(combination,strtok(NULL,"&"),-1);
+                    }
+                  }
+                  /*}}}*/
+
+                  st_sort(combination);
+                  /* Do not use st_byindex in sorted stringtable. Sorting do not affect index within the structure */
+                  strcpy(product_storage,combination->se[0][0].s); 
+                  for (j=1; j < st_getsize(combination); j++) {
+                    strcat(product_storage,"&");
+                    strcat(product_storage,combination->se[j][0].s);
+                  }
+                  st_add_ifabsent(obs->products,product_storage,-1);
+                  so->product = st_findindexbystring(obs->products,product_storage);
+                }
+            }
+            if (so->instrument != o->instrument) {
+                // Merge instrument names in a nice fashion
+                char* so_iname = st_findstringbyindex(obs->instruments, so->instrument);
+                char* o_iname = st_findstringbyindex(obs->instruments, o->instrument);
+                char* so_ismerged = strstr(so_iname,"&");
+                char* o_ismerged = strstr(o_iname,"&");
+                stringtable* combination = st_create("combination");
+                
+                if ((!so_ismerged) && (!o_ismerged)) {
+                  char instrument_combined[NC_MAX_NAME*10];
+                  st_add_ifabsent(combination,so_iname,-1);
+                  st_add_ifabsent(combination,o_iname,-1);
+                  st_sort(combination);
+                  strcpy(instrument_combined,combination->se[0][0].s);
+                  strcat(instrument_combined,"&");
+                  strcat(instrument_combined,combination->se[1][0].s);
+                  st_add_ifabsent(obs->instruments,instrument_combined,-1);
+                  so->instrument = st_findindexbystring(obs->instruments,instrument_combined);
+                }
+                else { 
+                  int long unsigned i;
+                  int j;
+                  int n_sep_so = 0;
+                  int n_sep_o = 0;
+                  char instrument_combination_so[NC_MAX_NAME*10];
+                  char instrument_combination_o[NC_MAX_NAME*10];
+                  char instrument_storage[NC_MAX_NAME*10];
+
+                  //*{{{ *//
+                  for (i=0; i < strlen(so_iname) ; i++) {
+                    if (strncmp(&so_iname[i],"&",1) == 0)
+                      n_sep_so += 1;
+                  }
+                  strcpy(instrument_combination_so,so_iname);
+                  if (n_sep_so == 0)
+                    st_add_ifabsent(combination,instrument_combination_so,-1);
+                  else {
+                    for (j=0; j <= n_sep_so; j++) {
+                      if (j==0)
+                        st_add_ifabsent(combination,strtok(instrument_combination_so,"&"),-1);
+                      else
+                        st_add_ifabsent(combination,strtok(NULL,"&"),-1);
+                    }
+                  }
+                  /*}}}*/
+                
+                  /* {{{ */
+                  for (i=0; i < strlen(o_iname) ; i++) {
+                    if (strncmp(&o_iname[i],"&",1) == 0)
+                      n_sep_o += 1;
+                  }
+                  strcpy(instrument_combination_o,o_iname);
+                  if (n_sep_o == 0)
+                    st_add_ifabsent(combination,instrument_combination_o,-1);
+                  else {
+                    for (j=0; j <= n_sep_o; j++) {
+                      if (j==0)
+                        st_add_ifabsent(combination,strtok(instrument_combination_o,"&"),-1);
+                      else
+                        st_add_ifabsent(combination,strtok(NULL,"&"),-1);
+                    }
+                  }
+                  /*}}}*/
+
+                  st_sort(combination);
+                  /* Do not use st_byindex in sorted stringtable. Sorting do not affect index within the structure */
+                  strcpy(instrument_storage,combination->se[0][0].s); 
+                  for (j=1; j < st_getsize(combination); j++) {
+                    strcat(instrument_storage,"&");
+                    strcat(instrument_storage,combination->se[j][0].s);
+                  }
+                  st_add_ifabsent(obs->instruments,instrument_storage,-1);
+                  so->instrument = st_findindexbystring(obs->instruments,instrument_storage);
+                }
+            }
+            if (so->fid != o->fid) {
+              // Merge fid names 
+                char* so_fname = st_findstringbyindex(obs->datafiles, so->fid);
+                char* o_fname = st_findstringbyindex(obs->datafiles, o->fid);
+                char* so_ismerged = strstr(so_fname,"&");
+                char* o_ismerged = strstr(o_fname,"&");
+                stringtable* combination = st_create("combination");
+                
+                if ((!so_ismerged) && (!o_ismerged)) {
+                  char fid_combined[NC_MAX_NAME*10];
+                  st_add_ifabsent(combination,so_fname,-1);
+                  st_add_ifabsent(combination,o_fname,-1);
+                  st_sort(combination);
+                  strcpy(fid_combined,combination->se[0][0].s);
+                  strcat(fid_combined,"&");
+                  strcat(fid_combined,combination->se[1][0].s);
+                  st_add_ifabsent(obs->datafiles,fid_combined,-1);
+                  so->fid = st_findindexbystring(obs->datafiles,fid_combined);
+                }
+                else { 
+                  int long unsigned i;
+                  int j;
+                  int n_sep_so = 0;
+                  int n_sep_o = 0;
+                  char fid_combination_so[NC_MAX_NAME*10];
+                  char fid_combination_o[NC_MAX_NAME*10];
+                  char fid_storage[NC_MAX_NAME*10];
+
+                  //*{{{ *//
+                  for (i=0; i < strlen(so_fname) ; i++) {
+                    if (strncmp(&so_fname[i],"&",1) == 0)
+                      n_sep_so += 1;
+                  }
+                  strcpy(fid_combination_so,so_fname);
+                  if (n_sep_so == 0)
+                    st_add_ifabsent(combination,fid_combination_so,-1);
+                  else {
+                    for (j=0; j <= n_sep_so; j++) {
+                      if (j==0)
+                        st_add_ifabsent(combination,strtok(fid_combination_so,"&"),-1);
+                      else
+                        st_add_ifabsent(combination,strtok(NULL,"&"),-1);
+                    }
+                  }
+                  /*}}}*/
+                
+                  /* {{{ */
+                  for (i=0; i < strlen(o_fname) ; i++) {
+                    if (strncmp(&o_fname[i],"&",1) == 0)
+                      n_sep_o += 1;
+                  }
+                  strcpy(fid_combination_o,o_fname);
+                  if (n_sep_o == 0)
+                    st_add_ifabsent(combination,fid_combination_o,-1);
+                  else {
+                    for (j=0; j <= n_sep_o; j++) {
+                      if (j==0)
+                        st_add_ifabsent(combination,strtok(fid_combination_o,"&"),-1);
+                      else
+                        st_add_ifabsent(combination,strtok(NULL,"&"),-1);
+                    }
+                  }
+                  /*}}}*/
+
+                  st_sort(combination);
+                  /* Do not use st_byindex in sorted stringtable. Sorting do not affect index within the structure */
+                  strcpy(fid_storage,combination->se[0][0].s); 
+                  for (j=1; j < st_getsize(combination); j++) {
+                    strcat(fid_storage,"&");
+                    strcat(fid_storage,combination->se[j][0].s);
+                  }
+                  st_add_ifabsent(obs->datafiles,fid_storage,-1);
+                  so->fid = st_findindexbystring(obs->datafiles,fid_storage);
+                }
+            }
+            if (so->batch != o->batch) {
                 so->batch = -1;
+            }
 
             var = o->std * o->std;
             if (subvar > var) {
