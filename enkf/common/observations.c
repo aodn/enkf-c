@@ -1411,19 +1411,19 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
     /* Transform type to obs_type "zeta ubar vbar u v temperature salinity".*/
     for (i = 0; i < obs->nobs; ++i) {
       char* otname = obs->obstypes[type[i]].name;
-      if (strcmp(otname,"sla") == 0)
+      if ((strcmp(otname,"sla") == 0) || (strcmp(otname,"SLA") == 0))
         obs_type[i] = 1;
-      else if (strcmp(otname,"ubar") == 0)
+      else if ((strcmp(otname,"ubar") == 0) || (strcmp(otname,"UBAR") == 0))
         obs_type[i] = 2;
-      else if (strcmp(otname,"vbar") == 0)
+      else if ((strcmp(otname,"vbar") == 0) || (strcmp(otname,"VBAR") == 0))
         obs_type[i] = 3;
-      else if ((strcmp(otname,"u_surface") == 0) || (strcmp(otname,"u") == 0))
+      else if ((strcmp(otname,"u_surface") == 0) || (strcmp(otname,"u") == 0) || (strcmp(otname,"U") == 0))
         obs_type[i] = 4;
-      else if ((strcmp(otname,"v_surface") == 0) || (strcmp(otname,"v") == 0))
+      else if ((strcmp(otname,"v_surface") == 0) || (strcmp(otname,"v") == 0) || (strcmp(otname,"V") == 0))
         obs_type[i] = 5;
-      else if ((strcmp(otname,"temp") == 0) || (strcmp(otname,"sst") == 0))
+      else if ((strcmp(otname,"temp") == 0) || (strcmp(otname,"TEM") == 0) || (strcmp(otname,"sst") == 0))
         obs_type[i] = 6;
-      else if ((strcmp(otname,"salt") == 0) || (strcmp(otname,"sss") == 0))
+      else if ((strcmp(otname,"salt") == 0) || (strcmp(otname,"SAL") == 0) || (strcmp(otname,"sss") == 0))
         obs_type[i] = 7;
       else
         obs_type[i] = -1;
