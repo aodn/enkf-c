@@ -1002,7 +1002,11 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
     double* fj;
     double* fk;
     double* date;
+    int* obs_type_count;
     double* obs_variance;
+    double* obs_mean;
+    double* oldm;
+    double* olds;
     int* status;
     int* aux;
 
@@ -1070,11 +1074,6 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
     tmp = realloc(survey_time,nsurvey*sizeof(double));
     tmp = realloc(obs_in_survey,nsurvey*sizeof(int));
     free(tmp);
-  
-    //Obtain the minimum of variance of superobs per state variable
-    //as a estimate of the lowest variance of each obs type
-     //Obtain number of observations in each unique day
-
 
     int dimid_survey[1];
     ncw_def_dim(ncid, "survey", nsurvey, dimid_survey);
@@ -1108,6 +1107,15 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
 
     ncw_put_att_text(ncid, varid_survey_time, "units", newdatestr);
     ncw_put_att_text(ncid, varid_survey_time, "calendar", "gregorian");
+
+    int varid_obs_type_count;
+    ncw_def_var(ncid, "obs_type_count", NC_SHORT, 1, dimid_state_variable, &varid_obs_type_count);
+    ncw_put_att_text(ncid, varid_obs_type_count, "long_name", "global time and space number of observations");
+
+    int varid_obs_mean;
+    ncw_def_var(ncid, "obs_mean", NC_DOUBLE, 1, dimid_state_variable,&varid_obs_mean);
+    ncw_put_att_text(ncid, varid_obs_mean, "long_name", "global time and space observation mean");
+    ncw_put_att_text(ncid, varid_obs_mean, "units", "state variable units");
 
     int varid_obs_variance;
     ncw_def_var(ncid, "obs_variance", NC_DOUBLE, 1, dimid_state_variable,&varid_obs_variance);
@@ -1264,13 +1272,39 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
     status = malloc(nobs * sizeof(int));
     aux = malloc(nobs * sizeof(int));
 
-    int ounique;
-    int nvaru;
-    nvaru = 0;
-    int jj;
-    obs_variance = malloc(obs->nobs * sizeof(double));
-    memset(obs_variance,0,sizeof(double));
+    /*
+     * Detect how many types of obs we got, so we can allocate obs_[mean,variance]
+     */
+    int an_obs_type;
+    int new_status = 0;
+    int oindex = 0;
+    memset(id,0,nobs*sizeof(int));
+    id[oindex] = obs->data[oindex].type;
+    for (i = 1; i < obs->nobs; ++i) {
+      an_obs_type = obs->data[i].type;
+      for (ii = 0; ii <= oindex ; ++ii) {
+        if (an_obs_type == id[ii]) {
+          new_status = 0;
+          break;
+        }
+        else
+          new_status = 1;
+      }
+      if (new_status) {
+          oindex += 1;
+          id[oindex] = an_obs_type;
+      }
+    }
 
+    int osize = oindex+1;
+    obs_type_count = malloc(osize*sizeof(int)); 
+    oldm = malloc(osize*sizeof(double));
+    olds = malloc(osize*sizeof(double));
+    obs_mean = malloc(osize*sizeof(double));
+    obs_variance = malloc(osize*sizeof(double));
+    memset(obs_type_count,0,osize*sizeof(int));
+    
+    double m_old_diff;
     for (i = 0, ii = 0; i < obs->nobs; ++i) {
         observation* m = &obs->data[i];
 
@@ -1301,24 +1335,28 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
         status[ii] = m->status;
         aux[ii] = m->aux;
 
-        ounique = 1;
-        if (ii == 0) {
-          nvaru++;
-          obs_variance[ii] = var[ii];
-        } else {
-          for (jj=0; jj < ounique; ++jj) {
-            if (obs_variance[ii] == var[jj]) {
-              ounique=0;
-              break;
-
-            }
+        /* Compute online mean and variance */
+        obs_type_count[type[ii]] += 1;
+          if (obs_type_count[type[ii]] == 1) {
+            oldm[type[ii]] = value[ii];
+            olds[type[ii]] = 0.0;
           }
-          if (ounique==1) {
-            obs_variance[nvaru] = var[ii];
-          }
-        }
+          else {
+            m_old_diff = value[ii] - oldm[type[ii]];
+           
+            obs_mean[type[ii]] = oldm[type[ii]] + m_old_diff/obs_type_count[type[ii]];
+            obs_variance[type[ii]] = olds[type[ii]] + m_old_diff*(value[ii]-obs_mean[type[ii]]);
 
+            oldm[type[ii]] = obs_mean[type[ii]];
+            olds[type[ii]] = obs_variance[type[ii]];
+          }
         ii++;
+        /* Finish the variance calculation */
+        if (ii == nobs) {
+          int j;
+          for (j=0; j <= oindex; ++j)
+            obs_variance[j] /= (obs_type_count[j]-1);
+        }
     }
     assert(ii == nobs);
     //store unique items
@@ -1345,14 +1383,26 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
     //ROMS4DVAR variables
     spherical = malloc(sizeof(int));
     spherical[0] = 1;
-    
+
     ncw_put_var_int(ncid, varid_spherical, spherical);
     ncw_put_var_int(ncid,varid_nobs,obs_in_survey);
     ncw_put_var_double(ncid,varid_survey_time,survey_time);
 
 
-//    ncw_put_var_double(ncid,varid_obs_variance,obs_variance);
-
+    /* Only support the physical state variables in 4dvar */
+    if (osize < 7) {
+            obs_type_count = realloc(obs_type_count, 7*sizeof(int));
+            obs_mean = realloc(obs_mean, 7*sizeof(double));
+            obs_variance = realloc(obs_variance, 7*sizeof(double));
+            for (i=osize; i<7 ; ++i) {
+              obs_type_count[i] = 0;
+              obs_mean[i] = NAN;
+              obs_variance[i] = NAN;
+            }
+    }
+    ncw_put_var_int(ncid,varid_obs_type_count,obs_type_count);
+    ncw_put_var_double(ncid,varid_obs_mean,obs_mean);
+    ncw_put_var_double(ncid,varid_obs_variance,obs_variance);
 
     /* ncw_put_var_int(ncid, varid_id, id); */
     /* ncw_put_var_int(ncid, varid_idorig, id_orig); */
@@ -1636,7 +1686,7 @@ void obs_superob(observations* obs, __compar_d_fn_t cmp_obs, observations** sobs
                   char product_storage[NC_MAX_NAME*10];
 
                   //*{{{ *//
-                  for (i=0; i < strlen(so_pname) ; i++) {
+                  for (i=0; i < strlen(so_pname) ; ++i) {
                     if (strncmp(&so_pname[i],"&",1) == 0)
                       n_sep_so += 1;
                   }
@@ -1644,7 +1694,7 @@ void obs_superob(observations* obs, __compar_d_fn_t cmp_obs, observations** sobs
                   if (n_sep_so == 0)
                     st_add_ifabsent(combination,product_combination_so,-1);
                   else {
-                    for (j=0; j <= n_sep_so; j++) {
+                    for (j=0; j <= n_sep_so; ++j) {
                       if (j==0)
                         st_add_ifabsent(combination,strtok(product_combination_so,"&"),-1);
                       else
@@ -1654,7 +1704,7 @@ void obs_superob(observations* obs, __compar_d_fn_t cmp_obs, observations** sobs
                   /*}}}*/
                 
                   /* {{{ */
-                  for (i=0; i < strlen(o_pname) ; i++) {
+                  for (i=0; i < strlen(o_pname) ; ++i) {
                     if (strncmp(&o_pname[i],"&",1) == 0)
                       n_sep_o += 1;
                   }
@@ -1662,7 +1712,7 @@ void obs_superob(observations* obs, __compar_d_fn_t cmp_obs, observations** sobs
                   if (n_sep_o == 0)
                     st_add_ifabsent(combination,product_combination_o,-1);
                   else {
-                    for (j=0; j <= n_sep_o; j++) {
+                    for (j=0; j <= n_sep_o; ++j) {
                       if (j==0)
                         st_add_ifabsent(combination,strtok(product_combination_o,"&"),-1);
                       else
@@ -1674,7 +1724,7 @@ void obs_superob(observations* obs, __compar_d_fn_t cmp_obs, observations** sobs
                   st_sort(combination);
                   /* Do not use st_byindex in sorted stringtable. Sorting do not affect index within the structure */
                   strcpy(product_storage,combination->se[0][0].s); 
-                  for (j=1; j < st_getsize(combination); j++) {
+                  for (j=1; j < st_getsize(combination); ++j) {
                     strcat(product_storage,"&");
                     strcat(product_storage,combination->se[j][0].s);
                   }
@@ -1711,7 +1761,7 @@ void obs_superob(observations* obs, __compar_d_fn_t cmp_obs, observations** sobs
                   char instrument_storage[NC_MAX_NAME*10];
 
                   //*{{{ *//
-                  for (i=0; i < strlen(so_iname) ; i++) {
+                  for (i=0; i < strlen(so_iname) ; ++i) {
                     if (strncmp(&so_iname[i],"&",1) == 0)
                       n_sep_so += 1;
                   }
@@ -1719,7 +1769,7 @@ void obs_superob(observations* obs, __compar_d_fn_t cmp_obs, observations** sobs
                   if (n_sep_so == 0)
                     st_add_ifabsent(combination,instrument_combination_so,-1);
                   else {
-                    for (j=0; j <= n_sep_so; j++) {
+                    for (j=0; j <= n_sep_so; ++j) {
                       if (j==0)
                         st_add_ifabsent(combination,strtok(instrument_combination_so,"&"),-1);
                       else
@@ -1729,7 +1779,7 @@ void obs_superob(observations* obs, __compar_d_fn_t cmp_obs, observations** sobs
                   /*}}}*/
                 
                   /* {{{ */
-                  for (i=0; i < strlen(o_iname) ; i++) {
+                  for (i=0; i < strlen(o_iname) ; ++i) {
                     if (strncmp(&o_iname[i],"&",1) == 0)
                       n_sep_o += 1;
                   }
@@ -1737,7 +1787,7 @@ void obs_superob(observations* obs, __compar_d_fn_t cmp_obs, observations** sobs
                   if (n_sep_o == 0)
                     st_add_ifabsent(combination,instrument_combination_o,-1);
                   else {
-                    for (j=0; j <= n_sep_o; j++) {
+                    for (j=0; j <= n_sep_o; ++j) {
                       if (j==0)
                         st_add_ifabsent(combination,strtok(instrument_combination_o,"&"),-1);
                       else
@@ -1749,7 +1799,7 @@ void obs_superob(observations* obs, __compar_d_fn_t cmp_obs, observations** sobs
                   st_sort(combination);
                   /* Do not use st_byindex in sorted stringtable. Sorting do not affect index within the structure */
                   strcpy(instrument_storage,combination->se[0][0].s); 
-                  for (j=1; j < st_getsize(combination); j++) {
+                  for (j=1; j < st_getsize(combination); ++j) {
                     strcat(instrument_storage,"&");
                     strcat(instrument_storage,combination->se[j][0].s);
                   }
@@ -1786,7 +1836,7 @@ void obs_superob(observations* obs, __compar_d_fn_t cmp_obs, observations** sobs
                   char fid_storage[NC_MAX_NAME*10];
 
                   //*{{{ *//
-                  for (i=0; i < strlen(so_fname) ; i++) {
+                  for (i=0; i < strlen(so_fname) ; ++i) {
                     if (strncmp(&so_fname[i],"&",1) == 0)
                       n_sep_so += 1;
                   }
@@ -1794,7 +1844,7 @@ void obs_superob(observations* obs, __compar_d_fn_t cmp_obs, observations** sobs
                   if (n_sep_so == 0)
                     st_add_ifabsent(combination,fid_combination_so,-1);
                   else {
-                    for (j=0; j <= n_sep_so; j++) {
+                    for (j=0; j <= n_sep_so; ++j) {
                       if (j==0)
                         st_add_ifabsent(combination,strtok(fid_combination_so,"&"),-1);
                       else
@@ -1804,7 +1854,7 @@ void obs_superob(observations* obs, __compar_d_fn_t cmp_obs, observations** sobs
                   /*}}}*/
                 
                   /* {{{ */
-                  for (i=0; i < strlen(o_fname) ; i++) {
+                  for (i=0; i < strlen(o_fname) ; ++i) {
                     if (strncmp(&o_fname[i],"&",1) == 0)
                       n_sep_o += 1;
                   }
@@ -1812,7 +1862,7 @@ void obs_superob(observations* obs, __compar_d_fn_t cmp_obs, observations** sobs
                   if (n_sep_o == 0)
                     st_add_ifabsent(combination,fid_combination_o,-1);
                   else {
-                    for (j=0; j <= n_sep_o; j++) {
+                    for (j=0; j <= n_sep_o; ++j) {
                       if (j==0)
                         st_add_ifabsent(combination,strtok(fid_combination_o,"&"),-1);
                       else
@@ -1824,7 +1874,7 @@ void obs_superob(observations* obs, __compar_d_fn_t cmp_obs, observations** sobs
                   st_sort(combination);
                   /* Do not use st_byindex in sorted stringtable. Sorting do not affect index within the structure */
                   strcpy(fid_storage,combination->se[0][0].s); 
-                  for (j=1; j < st_getsize(combination); j++) {
+                  for (j=1; j < st_getsize(combination); ++j) {
                     strcat(fid_storage,"&");
                     strcat(fid_storage,combination->se[j][0].s);
                   }
