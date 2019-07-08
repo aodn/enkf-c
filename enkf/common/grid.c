@@ -425,10 +425,28 @@ static gz_sigma* gz_sigma_create(grid* g, int ni, int nj, int nk, double* st, do
                     cc[i] = -cc[i];
         }
     }
+
+    /*
+     * Check if s_rho is uniform
+     */
+    int is_uniform = 1;
+    float diff = 0;
+    float maxdiff = 0;
+    float tolerance = 1e-10;
+    if (st != NULL) {
+        for (i = 1; i < nk-1; ++i) {
+            diff = 1-(st[i+1]-st[i])/(st[i]-st[i-1]);
+            maxdiff = diff>maxdiff ? diff : maxdiff ;
+        }
+        if (maxdiff > tolerance) {
+            is_uniform = 0;
+            enkf_printf("%s: Warning: Sigma coordinates are non-uniform. Computing Cs_w based on Legendre polynomial functions (Vtretching=5)\n", g->name);
+        }
+    }
     /*
      * build Cs_w if necessary
      */
-    if (cc == NULL) {
+    if ((cc == NULL) && (is_uniform == 1)) {
         if (ct[0] > ct[nk - 1]) {
             gz->cc[0] = 1.0;
             gz->cc[nk - 1] = 0.0;
@@ -438,6 +456,17 @@ static gz_sigma* gz_sigma_create(grid* g, int ni, int nj, int nk, double* st, do
         }
         for (i = 1; i < nk; ++i)
             gz->cc[i] = (gz->ct[i - 1] + gz->ct[i]) / 2.0;
+    }
+    else if ((cc == NULL) && (is_uniform == 0)) {
+        if (ct[0] > ct[nk -1]) {
+            gz->cc[0] = 1.0;
+            gz->cc[nk -1] = 0.0;
+        } else {
+            gz->cc[0] = 0.0;
+            gz->cc[nk -1] = 1.0;
+        }
+        for (i = 1; i < nk; ++i)
+            gz->cc[i] = -1*(i*i -2*i*nk+i+nk*nk-nk) - 0.01*(i*i-i*nk)/(1-nk);
     }
 
     /*
