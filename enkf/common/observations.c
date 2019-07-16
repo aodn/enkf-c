@@ -1279,20 +1279,22 @@ void obs_write_4dvar(observations* obs, char* name, variable* vars, char fname[]
     int new_status = 0;
     int oindex = 0;
     memset(id,0,nobs*sizeof(int));
-    id[oindex] = obs->data[oindex].type;
-    for (i = 1; i < obs->nobs; ++i) {
-      an_obs_type = obs->data[i].type;
-      for (ii = 0; ii <= oindex ; ++ii) {
-        if (an_obs_type == id[ii]) {
-          new_status = 0;
-          break;
+    if (nobs > 0) {
+      id[oindex] = obs->data[oindex].type;
+      for (i = 1; i < obs->nobs; ++i) {
+        an_obs_type = obs->data[i].type;
+        for (ii = 0; ii <= oindex ; ++ii) {
+          if (an_obs_type == id[ii]) {
+            new_status = 0;
+            break;
+          }
+          else
+            new_status = 1;
         }
-        else
-          new_status = 1;
-      }
-      if (new_status) {
-          oindex += 1;
-          id[oindex] = an_obs_type;
+        if (new_status) {
+            oindex += 1;
+            id[oindex] = an_obs_type;
+        }
       }
     }
 
